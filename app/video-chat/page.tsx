@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Mic, PhoneOff, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -13,7 +13,35 @@ interface Message {
 export default function VideoChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageCounter, setMessageCounter] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    async function setupCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: true,
+          audio: false
+        });
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error('Error accessing camera:', err);
+      }
+    }
+    
+    setupCamera();
+    
+    return () => {
+      // Cleanup: stop all tracks when component unmounts
+      if (videoRef.current?.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   const handleEndCall = () => {
     router.push('/audit-overview');
@@ -56,13 +84,12 @@ export default function VideoChat() {
         />
         {/* Camera Preview */}
         <div className="absolute top-4 right-4 w-32 h-48 rounded-lg overflow-hidden shadow-lg border border-white/20">
-          <div 
-            className="w-full h-full bg-cover bg-center"
-            style={{
-              backgroundImage: 'url("https://images.pexels.com/photos/3814446/pexels-photo-3814446.jpeg")',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-cover"
           />
         </div>
       </div>
