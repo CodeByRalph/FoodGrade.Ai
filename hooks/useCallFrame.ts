@@ -95,6 +95,7 @@ export function useCallFrame() {
         startAudioOff: false,
         showLocalVideo: true,
         showParticipantsBar: false,
+        enable_prejoin_ui: false,
       });
 
       console.log('[useCallFrame] Successfully created Daily.co frame');
