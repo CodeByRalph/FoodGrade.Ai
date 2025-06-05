@@ -5,8 +5,9 @@ import { Mic, PhoneOff, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useCallFrame } from '@/hooks/useCallFrame';
-import { updateAuditScore, getCurrentScore, resetScore } from '@/ai-tools/update_audit_score';
-import { clearViolations, getViolations } from '@/ai-tools/log_violation';
+import { getCurrentScore, resetScore, updateAuditScore } from '@/ai-tools/update_audit_score';
+import { clearViolations, getViolations, logViolation } from '@/ai-tools/log_violation';
+import { realTimeCoaching } from '@/ai-tools/real_time_coaching';
 import { violations } from '@/lib/violations';
 import { handleViolation } from '@/lib/handle-violation';
 import { Button } from '@/components/ui/button';
@@ -87,40 +88,44 @@ export default function VideoChat() {
               const score = updateAuditScore(args.severity);
               setAuditScore(score);
               
-              logViolation({
-                violation_name: args.violation_name,
+              const violation = {
+                name: args.violation_name,
+                description: args.violation_name,
                 severity: args.severity,
-                evidence: args.evidence || null,
-                timestamp: new Date().toISOString()
-              });
+                timestamp: Date.now()
+              };
               
-              const message = realTimeCoaching({
-                violation_name: args.violation_name,
-                recommendation: `Please address this ${args.severity} severity violation immediately.`
+              logViolation(violation);
+              
+              const coaching = realTimeCoaching({
+                violation: args.violation_name,
+                description: args.violation_name,
+                severity: args.severity
               });
               
               setMessages(prev => [...prev, {
                 id: Date.now(),
-                text: message,
+                text: coaching,
                 isAI: true
               }]);
             } else if (toolName === 'real_time_coaching') {
-              const message = realTimeCoaching({
-                violation_name: args.violation_name,
-                recommendation: args.recommendation
+              const coaching = realTimeCoaching({
+                violation: args.violation_name,
+                description: args.recommendation,
+                severity: 'medium'
               });
               
               setMessages(prev => [...prev, {
                 id: Date.now(),
-                text: message,
+                text: coaching,
                 isAI: true
               }]);
             } else if (toolName === 'log_violation') {
               logViolation({
-                violation_name: args.violation_name,
+                name: args.violation_name,
+                description: args.violation_name,
                 severity: args.severity,
-                evidence: args.evidence || null,
-                timestamp: args.timestamp || new Date().toISOString()
+                timestamp: Date.now()
               });
             }
           }
