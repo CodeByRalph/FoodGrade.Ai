@@ -22,7 +22,7 @@ export default function VideoChat() {
     async function createCall() {
       try {
         // Initialize Tavus conversation
-        const tavusResponse = await fetch('https://api.tavus.io/v2/conversations', {
+        const tavusResponse = await fetch('https://api.tavus.io/v1/conversations', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.NEXT_PUBLIC_TAVUS_API_KEY}`,
