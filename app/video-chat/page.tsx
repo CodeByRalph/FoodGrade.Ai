@@ -47,7 +47,13 @@ export default function VideoChat() {
   const handleEndCall = () => {
     // Stop all camera tracks before navigating
     if (streamRef.current) {
+      // Clear video source first
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+      // Then stop all tracks
       streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
     router.push('/audit-overview');
   };
