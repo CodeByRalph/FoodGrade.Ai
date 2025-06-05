@@ -8,12 +8,10 @@ export async function POST(req: Request) {
         'x-api-key': process.env.TAVUS_API_KEY as string,
         'Content-Type': 'application/json',
       },
-      body: {
+      body: JSON.stringify({
         'persona_id': 'p589fe814765',
         'conversation_name': 'Safety Walkthrough',
-      }
-      // Uncomment and add if you want to pass any body data
-      // body: JSON.stringify({ ... }),
+      })
     });
 
     if (!tavusResponse.ok) {
