@@ -5,12 +5,23 @@ import { Mic, PhoneOff, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useCallFrame } from '@/hooks/useCallFrame';
-import { updateAuditScore, getCurrentScore, resetScore } from '@/ai-tools/update_audit_score';
+import { updateAuditScore, getCurrentScore, resetScore } from '@/ai-tools/update_audit_score'; 
+import { logViolation, clearViolations } from '@/ai-tools/log_violation';
+import { realTimeCoaching } from '@/ai-tools/real_time_coaching';
+import { violations } from '@/lib/violations';
 
 interface Message {
   id: number;
   text: string;
   isAI?: boolean;
+}
+
+interface PerceptionEvent {
+  type: string;
+  data: {
+    query: string;
+    confidence: number;
+  };
 }
 
 export default function VideoChat() {
@@ -20,6 +31,45 @@ export default function VideoChat() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { joinCall, leaveCall } = useCallFrame();
+
+  const handlePerceptionEvent = (event: PerceptionEvent) => {
+    if (event.type === 'perception_tool_call' && event.data.confidence > 0.8) {
+      // Find matching violation
+      const violation = violations.find(v => v.query === event.data.query);
+      
+      if (violation) {
+        // Log the violation
+        logViolation({
+          name: violation.id,
+          description: violation.description || violation.query,
+          severity: violation.severity,
+          timestamp: Date.now()
+        });
+        
+        // Update score
+        const newScore = updateAuditScore(violation.severity);
+        setAuditScore(newScore);
+        
+        // Get coaching message
+        const coaching = realTimeCoaching({
+          violation: violation.id,
+          description: violation.description || violation.query,
+          severity: violation.severity
+        });
+        
+        // Add coaching message
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          text: coaching,
+          isAI: true
+        }]);
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => clearViolations();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,7 +100,13 @@ export default function VideoChat() {
         if (!data.conversation_url) throw new Error('Missing conversation URL from API response');
         
         console.log('[VideoChat] Attempting to join call with URL:', data.conversation_url);
-        await joinCall(data.conversation_url, { containerId: 'video-container', userName: 'Food Safety Auditor' });
+        const callFrame = await joinCall(data.conversation_url, { 
+          containerId: 'video-container', 
+          userName: 'Food Safety Auditor' 
+        });
+        
+        // Subscribe to perception events
+        callFrame?.on('app-message', handlePerceptionEvent);
         console.log('[VideoChat] Successfully joined call');
       } catch (err) {
         console.error('[VideoChat] Error setting up call:', err);

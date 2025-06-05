@@ -46,7 +46,7 @@ export function useCallFrame() {
       });
 
       console.log('[useCallFrame] Successfully created Daily.co frame');
-      return dailyFrame;
+      return callFrameRef.current;
     } catch (error) {
       console.error('[useCallFrame] Error joining call:', error);
       if (error instanceof Error) {
