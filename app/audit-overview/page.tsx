@@ -7,30 +7,27 @@ import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, AlertTriangle, XCircle, TrendingDown, TrendingUp, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navigation } from '@/components/Navigation';
+import { getViolations } from '@/ai-tools/log_violation';
+import { getCurrentScore } from '@/ai-tools/update_audit_score';
 
 export default function AuditOverview() {
-  const currentScore = 85;
+  const currentScore = getCurrentScore();
   const previousScore = 78;
   const industryAverage = 82;
   
+  const violations = getViolations();
+  
+  const criticalIssues = violations.filter(v => v.severity === 'high').length;
+  const mediumIssues = violations.filter(v => v.severity === 'medium').length;
+  const lowIssues = violations.filter(v => v.severity === 'low').length;
+  
   const executiveSummary = {
-    criticalIssues: 2,
-    strengths: 3,
-    riskLevel: 'Moderate',
-    description: 'Audit revealed significant improvements in temperature control and sanitization protocols, while identifying critical issues in date labeling and storage organization that require immediate attention.'
+    criticalIssues,
+    strengths: violations.length === 0 ? 'All Standards Met' : `${3 - criticalIssues} Areas Meeting Standards`,
+    riskLevel: criticalIssues > 0 ? 'High' : mediumIssues > 0 ? 'Moderate' : 'Low',
+    description: `Audit identified ${criticalIssues} critical, ${mediumIssues} medium, and ${lowIssues} low priority issues requiring attention.`
   };
   
-  const findings = {
-    high: [
-      {
-        title: "Date Labeling Non-Compliance",
-        description: "Missing or incorrect date labels on prepared foods",
-        impact: "Risk of serving expired food items",
-        remediation: "Implement standardized labeling system",
-        timeline: "24 hours",
-        icon: AlertCircle,
-        iconClass: "text-red-500",
-      },
       {
         title: "Improper Food Storage",
         description: "Raw meats stored above ready-to-eat foods",
@@ -60,9 +57,40 @@ export default function AuditOverview() {
         remediation: "Refresh staff training",
         timeline: "1 week",
         icon: AlertTriangle,
+  const findings = {
+    high: violations
+      .filter(v => v.severity === 'high')
+      .map(v => ({
+        title: v.name,
+        description: v.description,
+        impact: "Immediate food safety risk",
+        remediation: "Implement corrective action immediately",
+        timeline: "24 hours",
+        icon: AlertCircle,
+        iconClass: "text-red-500",
+      })),
+    medium: violations
+      .filter(v => v.severity === 'medium')
+      .map(v => ({
+        title: v.name,
+        description: v.description,
+        impact: "Potential compliance risk",
+        remediation: "Address within specified timeline",
+        timeline: "72 hours",
+        icon: AlertTriangle,
+        iconClass: "text-yellow-500",
+      })),
+    low: violations
+      .filter(v => v.severity === 'low')
+      .map(v => ({
+        title: v.name,
+        description: v.description,
+        impact: "Minor operational impact",
+        remediation: "Schedule routine correction",
+        timeline: "1 week",
+        icon: AlertTriangle,
         iconClass: "text-blue-500",
-      }
-    ]
+      })),
   };
 
   const categoryScores = [
