@@ -18,7 +18,7 @@ export function useCallFrame() {
 
       // Cleanup existing call frame if it exists
       if (callFrameRef.current) {
-        callFrameRef.current.destroy();
+        await callFrameRef.current.destroy();
         callFrameRef.current = null;
       }
 
