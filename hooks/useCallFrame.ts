@@ -2,10 +2,13 @@ import { useRef, useEffect } from 'react';
 import DailyIframe from '@daily-co/daily-js';
 
 interface PerceptionEvent {
-  type: string;
-  data: {
-    query: string;
-    confidence: number;
+  message_type: string;
+  event_type: string;
+  conversation_id: string;
+  properties: {
+    name: string;
+    arguments: Record<string, any>;
+    frames: string[];
   };
 }
 
@@ -49,8 +52,8 @@ export function useCallFrame() {
       
       // Set up event handler if provided
       if (options.onPerceptionEvent) {
-        dailyFrame.on('app-message', (event: PerceptionEvent) => {
-          if (event.type === 'perception_tool_call') {
+        dailyFrame.on('app-message', (event: any) => {
+          if (event.event_type === 'conversation.perception_tool_call') {
             options.onPerceptionEvent?.(event);
           }
         });

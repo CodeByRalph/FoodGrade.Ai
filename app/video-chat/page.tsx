@@ -17,10 +17,13 @@ interface Message {
 }
 
 interface PerceptionEvent {
-  type: string;
-  data: {
-    query: string;
-    confidence: number;
+  message_type: string;
+  event_type: string;
+  conversation_id: string;
+  properties: {
+    name: string;
+    arguments: Record<string, any>;
+    frames: string[];
   };
 }
 
@@ -69,37 +72,35 @@ export default function VideoChat() {
           containerId: 'video-container', 
           userName: 'Food Safety Auditor',
           onPerceptionEvent: (event) => {
-            if (event.data.confidence > 0.8) {
-              // Find matching violation
-              const violation = violations.find(v => v.query === event.data.query);
+            // Find matching violation by tool name
+            const violation = violations.find(v => v.id === event.properties.name);
               
-              if (violation) {
-                // Log the violation
-                logViolation({
-                  name: violation.id,
-                  description: violation.description || violation.query,
-                  severity: violation.severity,
-                  timestamp: Date.now()
-                });
+            if (violation) {
+              // Log the violation
+              logViolation({
+                name: violation.id,
+                description: violation.description || violation.query,
+                severity: violation.severity,
+                timestamp: Date.now()
+              });
                 
-                // Update score
-                const newScore = updateAuditScore(violation.severity);
-                setAuditScore(newScore);
+              // Update score
+              const newScore = updateAuditScore(violation.severity);
+              setAuditScore(newScore);
                 
-                // Get coaching message
-                const coaching = realTimeCoaching({
-                  violation: violation.id,
-                  description: violation.description || violation.query,
-                  severity: violation.severity
-                });
+              // Get coaching message
+              const coaching = realTimeCoaching({
+                violation: violation.id,
+                description: violation.description || violation.query,
+                severity: violation.severity
+              });
                 
-                // Add coaching message
-                setMessages(prev => [...prev, {
-                  id: Date.now(),
-                  text: coaching,
-                  isAI: true
-                }]);
-              }
+              // Add coaching message
+              setMessages(prev => [...prev, {
+                id: Date.now(),
+                text: coaching,
+                isAI: true
+              }]);
             }
           }
         });
