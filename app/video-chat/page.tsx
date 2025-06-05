@@ -31,8 +31,8 @@ export default function VideoChat() {
        console.log('Raw response text:', text);
        let data;
        try {
-         data = JSON.parse(text);
-         console.log('Parsed JSON:', data);
+  
+         console.log('Parsed JSON:', text);
        } catch (err) {
          console.error('Failed to parse JSON:', err);
          data = null;
