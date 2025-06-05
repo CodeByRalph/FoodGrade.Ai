@@ -24,20 +24,11 @@ export default function VideoChat() {
       try {
         setError(null);
         // Create conversation through our API route
-        const tavusResponse = await fetch('https://tavusapi.com/v2/conversations', {
-          method: 'POST',
-          headers: {
-            'x-api-key': process.env.TAVUS_API_KEY,
-            'Content-Type': 'application/json',
-          },
-        })
+        const tavusResponse = await fetch('/api/tavus', {method: 'POST'})
+        const data = await tavusResponse.json()
 
-        if (!tavusResponse.ok) {
-          setError('Failed to create conversation');
-          throw new Error('Failed to create conversation');
-        }
+        console.log(data)
 
-        const { url: conversationUrl } = await tavusResponse.json();
 
         if (!callWrapperRef.current) {
           setError('Video container not ready');
