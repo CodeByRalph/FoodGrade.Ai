@@ -36,6 +36,12 @@ export default function VideoChat() {
           return;
         }
 
+        // Defensive again
+      if (callFrameRef.current) {
+        callFrameRef.current.destroy();
+        callFrameRef.current = null;
+      }
+
         const dailyFrame = DailyIframe.createFrame(callWrapperRef.current, {
           iframeStyle: {
             width: '100%',
@@ -79,6 +85,7 @@ export default function VideoChat() {
 
     // Cleanup
     return () => {
+      cancelled = true;
       if (callFrameRef.current) {
         callFrameRef.current.destroy();
         callFrameRef.current = null;
