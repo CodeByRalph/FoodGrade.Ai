@@ -34,8 +34,7 @@ export async function POST(req: Request) {
 
     // Return the URL in the expected format
     const response = data.conversation_url
-    
-    return new Response(JSON.stringify(response), {
+    return new Response(JSON.stringify({ conversation_url: response }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
