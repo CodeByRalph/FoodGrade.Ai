@@ -1,5 +1,5 @@
 import { type Violation } from './violations';
-import { updateAuditScore, getCurrentScore } from '@/ai-tools/update_audit_score';
+import { updateAuditScore } from '@/ai-tools/update_audit_score';
 import { logViolation } from '@/ai-tools/log_violation';
 import { realTimeCoaching } from '@/ai-tools/real_time_coaching';
 
@@ -26,11 +26,9 @@ export function handleViolation(violation: Violation): ViolationHandlerResult {
   // Update the score based on severity
   const newScore = updateAuditScore(violation.severity);
 
-  const oldScore = getCurrentScore();
   console.log('[handleViolation] Score updated:', {
-    oldScore,
     newScore,
-    deduction: oldScore - newScore
+    deduction: 'Score updated'
   });
 
   // Get coaching message
