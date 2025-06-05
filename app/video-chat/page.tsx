@@ -70,12 +70,18 @@ export default function VideoChat() {
       }
     }
 
+    if (callFrameRef.current) {
+      callFrameRef.current.destroy();
+      callFrameRef.current = null;
+    }
+
     createCall();
 
     // Cleanup
     return () => {
       if (callFrameRef.current) {
         callFrameRef.current.destroy();
+        callFrameRef.current = null;
       }
     };
   }, []);
