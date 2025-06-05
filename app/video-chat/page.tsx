@@ -5,7 +5,7 @@ import { Mic, PhoneOff, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useCallFrame } from '@/hooks/useCallFrame';
-import { getCurrentScore, resetScore } from '@/ai-tools/update_audit_score';
+import { updateAuditScore, getCurrentScore, resetScore } from '@/ai-tools/update_audit_score';
 import { clearViolations, getViolations } from '@/ai-tools/log_violation';
 import { violations } from '@/lib/violations';
 import { handleViolation } from '@/lib/handle-violation';
