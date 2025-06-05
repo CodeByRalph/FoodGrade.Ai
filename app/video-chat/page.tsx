@@ -47,14 +47,34 @@ export default function VideoChat() {
   const handleEndCall = () => {
     // Stop all camera tracks before navigating
     if (streamRef.current) {
-      // Clear video source first
       if (videoRef.current) {
         videoRef.current.srcObject = null;
+        videoRef.current.load(); // Force cleanup of video element
       }
-      // Then stop all tracks
-      streamRef.current.getTracks().forEach(track => track.stop());
+      
+      // Stop and release all tracks
+      const tracks = streamRef.current.getTracks();
+      tracks.forEach(track => {
+        track.stop();
+        streamRef.current?.removeTrack(track);
+      });
+      
+      // Clear the stream reference
       streamRef.current = null;
     }
+    
+    // Explicitly revoke any persistent permissions
+    if (navigator.permissions && navigator.permissions.revoke) {
+      navigator.permissions.query({ name: 'camera' as PermissionName })
+        .then(permission => {
+          if (permission.state !== 'denied') {
+            // @ts-ignore - Types don't include revoke yet
+            navigator.permissions.revoke({ name: 'camera' });
+          }
+        })
+        .catch(console.error);
+    }
+
     router.push('/audit-overview');
   };
 
