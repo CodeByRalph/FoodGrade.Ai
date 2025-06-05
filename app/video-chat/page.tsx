@@ -30,7 +30,11 @@ export default function VideoChat() {
         });
         
         if (!tavusResponse.ok) {
-          throw new Error(`API error: ${tavusResponse.statusText}`);
+          const errorData = await tavusResponse.json().catch(() => null);
+          throw new Error(
+            errorData?.error || 
+            `API error: ${tavusResponse.statusText}`
+          );
         }
         
         const data = await tavusResponse.json();
