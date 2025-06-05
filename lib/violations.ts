@@ -37,6 +37,7 @@ export const violations: Violation[] = [
   { id: 'no-hair-restraint', query: "Is anyone not wearing a hair restraint or cap, but near food prep?", severity: 'high' },
   { id: 'sanitize-towel-misuse', query: "Are surfaces being wiped with dry towels instead of sanitizer towels?", severity: 'high' },
   { id: 'unlabeled-home-food', query: "Is all homemade food labeled with date and name?", severity: 'high' },
+  { id: 'sick-employee', query: "Is there any employee showing signs of illness such as coughing, sneezing, or visible symptoms?", severity: 'high', description: "Employee showing signs of illness must be immediately removed from food handling areas and sent home. This is a critical food safety violation that risks contamination and foodborne illness spread." },
 
   // MEDIUM RISK (Operational / Food Quality / Cleanliness)
   { id: 'steam-rice-unit', query: "Is steam rice unit clean and functioning?", severity: 'medium' },
