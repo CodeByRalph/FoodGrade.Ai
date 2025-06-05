@@ -59,11 +59,22 @@ export function useCallFrame() {
       iframeStyle: {
         width: '100%',
         height: '100%',
-        border: '0',
-        background: '#000000',
+        border: 'none',
+        background: 'transparent',
+        zIndex: '1',
       },
+      showLocalVideo: true,
+      showParticipantsBar: false,
       showLeaveButton: false,
       showFullscreenButton: false,
+      customTrayButtons: {
+        join: {
+          label: 'Join Call',
+          onClick: () => {
+            console.log('Custom join button clicked');
+          }
+        }
+      }
     });
   };
 
