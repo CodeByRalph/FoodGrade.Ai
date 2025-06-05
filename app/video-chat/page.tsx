@@ -6,9 +6,10 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useCallFrame } from '@/hooks/useCallFrame';
 import { getCurrentScore, resetScore } from '@/ai-tools/update_audit_score';
-import { clearViolations } from '@/ai-tools/log_violation';
+import { clearViolations, getViolations } from '@/ai-tools/log_violation';
 import { violations } from '@/lib/violations';
 import { handleViolation } from '@/lib/handle-violation';
+import { Button } from '@/components/ui/button';
 
 interface Message {
   id: number;
@@ -30,6 +31,7 @@ interface PerceptionEvent {
 export default function VideoChat() {
   const [auditScore, setAuditScore] = useState(getCurrentScore());
   
+  const [showDebug, setShowDebug] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -119,8 +121,83 @@ export default function VideoChat() {
     router.push('/audit-overview');
   };
 
+  const simulateViolation = (violationType: 'high' | 'medium' | 'low') => {
+    // Find a random violation of the specified severity
+    const possibleViolations = violations.filter(v => v.severity === violationType);
+    const randomViolation = possibleViolations[Math.floor(Math.random() * possibleViolations.length)];
+    
+    if (randomViolation) {
+      console.log(`[Debug] Simulating ${violationType} severity violation:`, randomViolation);
+      
+      const { score, message } = handleViolation(randomViolation);
+      console.log(`[Debug] New score: ${score}, Message: ${message}`);
+      
+      setAuditScore(score);
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        text: message,
+        isAI: true
+      }]);
+    }
+  };
+
   return (
     <main className="h-screen w-screen bg-black overflow-hidden relative">
+      {/* Debug Panel */}
+      <div className={cn(
+        "absolute top-0 right-0 bg-black/80 backdrop-blur-sm p-4 text-white transition-transform duration-300",
+        showDebug ? "translate-x-0" : "translate-x-full"
+      )}>
+        <div className="mb-4">
+          <h3 className="font-semibold mb-2">Current Score: {auditScore}</h3>
+          <div className="space-y-2">
+            <Button 
+              onClick={() => simulateViolation('high')}
+              className="w-full bg-red-500 hover:bg-red-600"
+            >
+              Simulate High Severity
+            </Button>
+            <Button 
+              onClick={() => simulateViolation('medium')}
+              className="w-full bg-yellow-500 hover:bg-yellow-600"
+            >
+              Simulate Medium Severity
+            </Button>
+            <Button 
+              onClick={() => simulateViolation('low')}
+              className="w-full bg-blue-500 hover:bg-blue-600"
+            >
+              Simulate Low Severity
+            </Button>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <h3 className="font-semibold">Recent Violations:</h3>
+          <div className="max-h-48 overflow-y-auto space-y-2">
+            {getViolations().map((v, i) => (
+              <div key={i} className="text-sm">
+                <span className={cn(
+                  "inline-block px-2 py-0.5 rounded mr-2",
+                  v.severity === 'high' ? "bg-red-500" :
+                  v.severity === 'medium' ? "bg-yellow-500" : "bg-blue-500"
+                )}>
+                  {v.severity}
+                </span>
+                {v.name}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Debug Toggle Button */}
+      <button
+        onClick={() => setShowDebug(!showDebug)}
+        className="absolute top-4 right-4 z-50 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 backdrop-blur-sm transition-colors"
+      >
+        {showDebug ? 'Hide Debug' : 'Show Debug'}
+      </button>
+
       {/* Video Container */}
       <div className="h-full w-full flex items-center justify-center">
         <div id="video-container" className="w-full h-full relative">
@@ -166,6 +243,9 @@ export default function VideoChat() {
           <span className="sr-only">Switch Camera</span>
           <Camera className="h-6 w-6" />
         </button>
+        <div className="absolute bottom-0 right-0 p-4">
+          <p className="text-white/80 text-sm">Score: {auditScore}</p>
+        </div>
       </div>
     </main>
   );

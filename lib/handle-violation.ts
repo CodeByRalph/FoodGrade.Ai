@@ -9,6 +9,12 @@ interface ViolationHandlerResult {
 }
 
 export function handleViolation(violation: Violation): ViolationHandlerResult {
+  console.log('[handleViolation] Processing violation:', {
+    id: violation.id,
+    severity: violation.severity,
+    description: violation.description
+  });
+
   // Log the violation
   logViolation({
     name: violation.id,
@@ -20,12 +26,20 @@ export function handleViolation(violation: Violation): ViolationHandlerResult {
   // Update the score based on severity
   const newScore = updateAuditScore(violation.severity);
 
+  console.log('[handleViolation] Score updated:', {
+    oldScore: getCurrentScore(),
+    newScore,
+    deduction: getCurrentScore() - newScore
+  });
+
   // Get coaching message
   const message = realTimeCoaching({
     violation: violation.id,
     description: violation.description || violation.query,
     severity: violation.severity
   });
+
+  console.log('[handleViolation] Generated coaching message:', message);
 
   return {
     score: newScore,
