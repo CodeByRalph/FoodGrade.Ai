@@ -38,7 +38,7 @@ export default function VideoChat() {
         }
         
         const data = await tavusResponse.json();
-        console.log(data)
+        
         if (!data.conversation_url) throw new Error('Missing conversation URL from API response');
         
         await joinCall(data.conversation_url, { containerId: 'video-container', userName: 'Food Safety Auditor' });
