@@ -15,6 +15,7 @@ export default function VideoChat() {
   const [messageCounter, setMessageCounter] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     async function setupCamera() {
@@ -24,6 +25,7 @@ export default function VideoChat() {
           audio: false
         });
         
+        streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
@@ -35,15 +37,18 @@ export default function VideoChat() {
     setupCamera();
     
     return () => {
-      // Cleanup: stop all tracks when component unmounts
-      if (videoRef.current?.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
+      if (streamRef.current) {
+        const stream = streamRef.current;
         stream.getTracks().forEach(track => track.stop());
       }
     };
   }, []);
 
   const handleEndCall = () => {
+    // Stop all camera tracks before navigating
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
     router.push('/audit-overview');
   };
 
