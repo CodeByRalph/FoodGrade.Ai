@@ -4,7 +4,7 @@ export async function POST() {
   try {
     if (!process.env.TAVUS_API_KEY) {
       return NextResponse.json(
-        { error: 'TAVUS_API_KEY environment variable is not set' },
+        { error: 'Missing Tavus API key' },
         { status: 500 }
       );
     }
@@ -12,7 +12,7 @@ export async function POST() {
     const response = await fetch('https://tavusapi.com/v2/conversations', {
       method: 'POST',
       headers: {
-        'x-api-key': process.env.TAVUS_API_KEY,
+        'x-api-key': '483ca82d99f948e88d3a238c9d194b19',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -25,13 +25,12 @@ export async function POST() {
     if (!response.ok) {
       const errorData = await response.text();
       console.error('Tavus API error details:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData
+        error: errorData,
+        status: response.status
       });
       
       return NextResponse.json(
-        { error: `Tavus API error: ${response.status} - ${response.statusText}` },
+        { error: `Failed to create conversation: ${errorData}` },
         { status: response.status }
       );
     }
