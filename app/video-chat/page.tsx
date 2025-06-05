@@ -54,6 +54,11 @@ export default function VideoChat() {
         });
       } catch (err) {
         console.error('Error setting up call:', err);
+      }
+    }
+
+    createCall();
+  }, []);
 
   const handleEndCall = async () => {
     if (callFrameRef.current) {
