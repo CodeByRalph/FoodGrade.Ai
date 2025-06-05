@@ -30,6 +30,7 @@ export default function VideoChat() {
        const data = await tavusResponse.json()
        
        const conversationUrl = data.conversation_url
+        console.log(conversationUrl)
 
 
         if (!callWrapperRef.current) {
