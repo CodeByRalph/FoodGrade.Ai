@@ -20,6 +20,7 @@ export default function VideoChat() {
   const router = useRouter();
 
   useEffect(() => {
+    let cancelled = false;
     console.log("useEffect fired");
     async function createCall() {
       try {
