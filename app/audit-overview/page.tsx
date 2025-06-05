@@ -28,6 +28,8 @@ export default function AuditOverview() {
     description: `Audit identified ${criticalIssues} critical, ${mediumIssues} medium, and ${lowIssues} low priority issues requiring attention.`
   };
   
+  const findings = {
+    high: [
       {
         title: "Improper Food Storage",
         description: "Raw meats stored above ready-to-eat foods",
@@ -57,40 +59,9 @@ export default function AuditOverview() {
         remediation: "Refresh staff training",
         timeline: "1 week",
         icon: AlertTriangle,
-  const findings = {
-    high: violations
-      .filter(v => v.severity === 'high')
-      .map(v => ({
-        title: v.name,
-        description: v.description,
-        impact: "Immediate food safety risk",
-        remediation: "Implement corrective action immediately",
-        timeline: "24 hours",
-        icon: AlertCircle,
-        iconClass: "text-red-500",
-      })),
-    medium: violations
-      .filter(v => v.severity === 'medium')
-      .map(v => ({
-        title: v.name,
-        description: v.description,
-        impact: "Potential compliance risk",
-        remediation: "Address within specified timeline",
-        timeline: "72 hours",
-        icon: AlertTriangle,
-        iconClass: "text-yellow-500",
-      })),
-    low: violations
-      .filter(v => v.severity === 'low')
-      .map(v => ({
-        title: v.name,
-        description: v.description,
-        impact: "Minor operational impact",
-        remediation: "Schedule routine correction",
-        timeline: "1 week",
-        icon: AlertTriangle,
         iconClass: "text-blue-500",
-      })),
+      }
+    ]
   };
 
   const categoryScores = [
