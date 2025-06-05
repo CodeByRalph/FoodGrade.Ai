@@ -32,41 +32,6 @@ export default function VideoChat() {
   const router = useRouter();
   const { joinCall, leaveCall } = useCallFrame();
 
-  const handlePerceptionEvent = (event: PerceptionEvent) => {
-    if (event.type === 'perception_tool_call' && event.data.confidence > 0.8) {
-      // Find matching violation
-      const violation = violations.find(v => v.query === event.data.query);
-      
-      if (violation) {
-        // Log the violation
-        logViolation({
-          name: violation.id,
-          description: violation.description || violation.query,
-          severity: violation.severity,
-          timestamp: Date.now()
-        });
-        
-        // Update score
-        const newScore = updateAuditScore(violation.severity);
-        setAuditScore(newScore);
-        
-        // Get coaching message
-        const coaching = realTimeCoaching({
-          violation: violation.id,
-          description: violation.description || violation.query,
-          severity: violation.severity
-        });
-        
-        // Add coaching message
-        setMessages(prev => [...prev, {
-          id: Date.now(),
-          text: coaching,
-          isAI: true
-        }]);
-      }
-    }
-  };
-
   useEffect(() => {
     return () => clearViolations();
   }, []);
@@ -102,11 +67,43 @@ export default function VideoChat() {
         console.log('[VideoChat] Attempting to join call with URL:', data.conversation_url);
         const callFrame = await joinCall(data.conversation_url, { 
           containerId: 'video-container', 
-          userName: 'Food Safety Auditor' 
+          userName: 'Food Safety Auditor',
+          onPerceptionEvent: (event) => {
+            if (event.data.confidence > 0.8) {
+              // Find matching violation
+              const violation = violations.find(v => v.query === event.data.query);
+              
+              if (violation) {
+                // Log the violation
+                logViolation({
+                  name: violation.id,
+                  description: violation.description || violation.query,
+                  severity: violation.severity,
+                  timestamp: Date.now()
+                });
+                
+                // Update score
+                const newScore = updateAuditScore(violation.severity);
+                setAuditScore(newScore);
+                
+                // Get coaching message
+                const coaching = realTimeCoaching({
+                  violation: violation.id,
+                  description: violation.description || violation.query,
+                  severity: violation.severity
+                });
+                
+                // Add coaching message
+                setMessages(prev => [...prev, {
+                  id: Date.now(),
+                  text: coaching,
+                  isAI: true
+                }]);
+              }
+            }
+          }
         });
         
-        // Subscribe to perception events
-        callFrame?.on('app-message', handlePerceptionEvent);
         console.log('[VideoChat] Successfully joined call');
       } catch (err) {
         console.error('[VideoChat] Error setting up call:', err);
