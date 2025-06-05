@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import DailyIframe from '@daily-co/daily-js';
+import { EventEmitter } from 'events';
 
 interface PerceptionEvent {
   message_type: string;
@@ -18,77 +19,122 @@ interface UseCallFrameOptions {
   onPerceptionEvent?: (event: PerceptionEvent) => void;
 }
 
+const eventEmitter = new EventEmitter();
+
 export function useCallFrame() {
   const callFrameRef = useRef<any>(null);
+  const retryCount = useRef(0);
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 2000;
 
-  const joinCall = async (url: string, options: UseCallFrameOptions) => {
+  const setupEventListeners = (frame: any, options: UseCallFrameOptions) => {
+    // Handle perception events
+    if (options.onPerceptionEvent) {
+      frame.on('app-message', (event: any) => {
+        if (event.event_type === 'conversation.perception_tool_call') {
+          options.onPerceptionEvent?.(event);
+        }
+      });
+    }
+
+    // Handle connection state changes
+    frame.on('joined-meeting', () => {
+      console.log('[Daily] Successfully joined meeting');
+      eventEmitter.emit('call-joined');
+    });
+
+    frame.on('left-meeting', () => {
+      console.log('[Daily] Left meeting');
+      eventEmitter.emit('call-left');
+    });
+
+    frame.on('error', (error: any) => {
+      console.error('[Daily] Error:', error);
+      eventEmitter.emit('call-error', error);
+    });
+  };
+
+  const createFrame = (container: HTMLElement) => {
+    return DailyIframe.createFrame(container, {
+      iframeStyle: {
+        width: '100%',
+        height: '100%',
+        border: '0',
+        background: '#000000',
+      },
+      showLeaveButton: false,
+      showFullscreenButton: false,
+    });
+  };
+
+  const joinCall = async (url: string, options: UseCallFrameOptions, retry = false) => {
     try {
       const container = document.getElementById(options.containerId);
       console.log('[useCallFrame] Joining call with URL:', url);
+      
       if (!container) {
         throw new Error('Container element not found');
       }
 
-      // Cleanup existing call frame if it exists
+      // Cleanup any existing call frame
       if (callFrameRef.current) {
         await callFrameRef.current.destroy();
         callFrameRef.current = null;
       }
 
-      const dailyFrame = DailyIframe.createFrame(container, {
-        iframeStyle: {
-          width: '100%',
-          height: '100%',
-          border: '0',
-          background: '#000000',
-        },
-        dailyConfig: {
-        },
-        showLeaveButton: false,
-        showFullscreenButton: false,
-      });
-
+      const dailyFrame = createFrame(container);
       callFrameRef.current = dailyFrame;
-      
-      // Set up event handler if provided
-      if (options.onPerceptionEvent) {
-        dailyFrame.on('app-message', (event: any) => {
-          if (event.event_type === 'conversation.perception_tool_call') {
-            options.onPerceptionEvent?.(event);
-          }
-        });
-      }
+
+      // Set up event listeners
+      setupEventListeners(dailyFrame, options);
 
       await dailyFrame.join({
         url,
         userName: options.userName || 'Guest',
         startVideoOff: false,
         startAudioOff: false,
+        showLocalVideo: true,
+        showParticipantsBar: false,
       });
 
       console.log('[useCallFrame] Successfully created Daily.co frame');
       return callFrameRef.current;
+
     } catch (error) {
       console.error('[useCallFrame] Error joining call:', error);
-      if (error instanceof Error) {
-        console.error('[useCallFrame] Error details:', {
-          message: error.message,
-          stack: error.stack,
-          name: error.name
+      
+      // Implement retry logic
+      if (retry && retryCount.current < MAX_RETRIES) {
+        retryCount.current++;
+        console.log(`[useCallFrame] Retrying... Attempt ${retryCount.current}`);
+        
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(joinCall(url, options, true));
+          }, RETRY_DELAY);
         });
       }
+      
       throw error;
     }
   };
 
   const leaveCall = async () => {
     if (callFrameRef.current) {
+      try {
+        await callFrameRef.current.leave();
+      } catch (error) {
+        console.error('[useCallFrame] Error leaving call:', error);
+      }
       await callFrameRef.current.destroy();
       callFrameRef.current = null;
     }
   };
 
   useEffect(() => {
+    // Reset retry count on component mount
+    retryCount.current = 0;
+
     return () => {
       if (callFrameRef.current) {
         callFrameRef.current.destroy();
@@ -101,5 +147,6 @@ export function useCallFrame() {
     joinCall,
     leaveCall,
     callFrame: callFrameRef.current,
+    eventEmitter,
   };
 }

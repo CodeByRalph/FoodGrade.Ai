@@ -35,8 +35,9 @@ export default function VideoChat() {
   const [showDebug, setShowDebug] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
   const router = useRouter();
-  const { joinCall, leaveCall } = useCallFrame();
+  const { joinCall, leaveCall, eventEmitter } = useCallFrame();
 
   useEffect(() => {
     // Reset score and violations at start of new call
@@ -46,9 +47,30 @@ export default function VideoChat() {
   }, []);
 
   useEffect(() => {
+    const handleCallJoined = () => {
+      setIsConnecting(false);
+      setError(null);
+    };
+
+    const handleCallError = (err: Error) => {
+      setIsConnecting(false);
+      setError(err.message);
+    };
+
+    eventEmitter.on('call-joined', handleCallJoined);
+    eventEmitter.on('call-error', handleCallError);
+
+    return () => {
+      eventEmitter.off('call-joined', handleCallJoined);
+      eventEmitter.off('call-error', handleCallError);
+    };
+  }, [eventEmitter]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function createCall() {
+      setIsConnecting(true);
       setAuditScore(getCurrentScore());
       
       try {
@@ -74,15 +96,13 @@ export default function VideoChat() {
         
         console.log('[VideoChat] Attempting to join call with URL:', data.conversation_url);
         
-        // Handle perception events from Tavus
         await joinCall(data.conversation_url, { 
           containerId: 'video-container', 
           userName: 'Food Safety Auditor',
           onPerceptionEvent: async (event: PerceptionEvent) => {
             if (event.event_type === 'conversation.perception_tool_call') {
-              const { tool, args } = event.properties;
-              
               try {
+                const { name: tool, arguments: args } = event.properties;
                 const response = await fetch('/api/ai-tools', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -94,6 +114,7 @@ export default function VideoChat() {
                 }
 
                 const { result } = await response.json();
+                if (!result) return;
 
                 // Update UI based on tool type
                 if (tool === 'update_audit_score') {
@@ -106,11 +127,12 @@ export default function VideoChat() {
                   }]);
                 }
               } catch (error) {
-                console.error('[VideoChat] Error processing tool call:', error);
+                console.error('[VideoChat] Tool call error:', error);
+                setError('Failed to process AI feedback');
               }
             }
-          }
-        });
+          },
+        }, true); // Enable retry
         
         console.log('[VideoChat] Successfully joined call');
       } catch (err) {
@@ -123,6 +145,7 @@ export default function VideoChat() {
           });
         }
         setError(err instanceof Error ? err.message : 'Failed to setup video call');
+        setIsConnecting(false);
       }
     }
 
@@ -219,9 +242,11 @@ export default function VideoChat() {
       {/* Video Container */}
       <div className="h-full w-full flex items-center justify-center">
         <div id="video-container" className="w-full h-full relative">
-          {error && (
+          {(error || isConnecting) && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-              <p className="text-white text-lg">{error}</p>
+              <p className="text-white text-lg">
+                {isConnecting ? 'Connecting to video call...' : error}
+              </p>
             </div>
           )}
         </div>
