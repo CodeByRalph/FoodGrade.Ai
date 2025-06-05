@@ -92,11 +92,7 @@ export function useCallFrame() {
       },
       showLeaveButton: false,
       showFullscreenButton: false,
-      dailyConfig: {
-        receiveSettings: {
-          base: { maxQuality: 'high' },
-        },
-      }
+      dailyConfig: {}
     });
   };
 
