@@ -35,7 +35,7 @@ export default function VideoChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const { joinCall, leaveCall, callFrame } = useCallFrame();
+  const { joinCall, leaveCall } = useCallFrame();
 
   useEffect(() => {
     // Reset score and violations at start of new call
@@ -80,26 +80,48 @@ export default function VideoChat() {
           onPerceptionEvent: (event: PerceptionEvent) => {
             console.log('[VideoChat] Received perception event:', event);
             
-            // Find matching violation by tool name
-            const violation = violations.find(v => v.id === event.properties.name);
-              
-            if (violation) {
-              console.log('[VideoChat] Found matching violation:', violation);
-              
-              // Handle the violation and get results
-              const { score, message } = handleViolation(violation);
-              
-              // Update UI
+            const toolName = event.properties.name;
+            const args = event.properties.arguments;
+            
+            if (toolName === 'update_audit_score') {
+              const score = updateAuditScore(args.severity);
               setAuditScore(score);
-                
-              // Add coaching message
+              
+              logViolation({
+                violation_name: args.violation_name,
+                severity: args.severity,
+                evidence: args.evidence || null,
+                timestamp: new Date().toISOString()
+              });
+              
+              const message = realTimeCoaching({
+                violation_name: args.violation_name,
+                recommendation: `Please address this ${args.severity} severity violation immediately.`
+              });
+              
               setMessages(prev => [...prev, {
                 id: Date.now(),
                 text: message,
                 isAI: true
               }]);
-            } else {
-              console.log('[VideoChat] No matching violation found for:', event.properties.name);
+            } else if (toolName === 'real_time_coaching') {
+              const message = realTimeCoaching({
+                violation_name: args.violation_name,
+                recommendation: args.recommendation
+              });
+              
+              setMessages(prev => [...prev, {
+                id: Date.now(),
+                text: message,
+                isAI: true
+              }]);
+            } else if (toolName === 'log_violation') {
+              logViolation({
+                violation_name: args.violation_name,
+                severity: args.severity,
+                evidence: args.evidence || null,
+                timestamp: args.timestamp || new Date().toISOString()
+              });
             }
           }
         });
