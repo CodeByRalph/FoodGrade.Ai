@@ -21,18 +21,17 @@ export default function VideoChat() {
   useEffect(() => {
     async function createCall() {
       try {
-        // Initialize Tavus conversation
-        const tavusResponse = await fetch('https://api.tavus.io/v1/conversations', {
+        // Create conversation through our API route
+        const tavusResponse = await fetch('/api/tavus', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_TAVUS_API_KEY}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            persona_id: "p589fe814765",
-            conversation_name: "Food Safety Walkthrough"
-          }),
         });
+
+        if (!tavusResponse.ok) {
+          throw new Error('Failed to create conversation');
+        }
 
         const { url: conversationUrl } = await tavusResponse.json();
 
