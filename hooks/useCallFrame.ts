@@ -1,9 +1,18 @@
 import { useRef, useEffect } from 'react';
 import DailyIframe from '@daily-co/daily-js';
 
+interface PerceptionEvent {
+  type: string;
+  data: {
+    query: string;
+    confidence: number;
+  };
+}
+
 interface UseCallFrameOptions {
   containerId: string;
   userName?: string;
+  onPerceptionEvent?: (event: PerceptionEvent) => void;
 }
 
 export function useCallFrame() {
@@ -37,6 +46,15 @@ export function useCallFrame() {
       });
 
       callFrameRef.current = dailyFrame;
+      
+      // Set up event handler if provided
+      if (options.onPerceptionEvent) {
+        dailyFrame.on('app-message', (event: PerceptionEvent) => {
+          if (event.type === 'perception_tool_call') {
+            options.onPerceptionEvent?.(event);
+          }
+        });
+      }
 
       await dailyFrame.join({
         url,
