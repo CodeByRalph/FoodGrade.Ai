@@ -2,6 +2,19 @@
 export async function POST(req: Request) {
   try {
     console.log('API route hit');
+    // Add CORS headers
+    const headers = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Content-Type': 'application/json'
+    };
+
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { headers, status: 200 });
+    }
+
     const tavusResponse = await fetch('https://tavusapi.com/v2/conversations', {
       method: 'POST',
       headers: {
@@ -18,7 +31,7 @@ export async function POST(req: Request) {
       const errorText = await tavusResponse.text();
       return new Response(JSON.stringify({ error: errorText }), {
         status: tavusResponse.status,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
@@ -28,7 +41,7 @@ export async function POST(req: Request) {
     if (!data.conversation_url || typeof data.conversation_url !== 'string') {
       return new Response(JSON.stringify({ error: 'Invalid or missing conversation URL from Tavus API' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
@@ -36,13 +49,13 @@ export async function POST(req: Request) {
     const response = data.conversation_url
     return new Response(JSON.stringify({ conversation_url: response }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   } catch (error) {
     console.error('[Tavus API] Error:', error);
     return new Response(JSON.stringify({ error: 'Failed to create Tavus conversation' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   }
 }

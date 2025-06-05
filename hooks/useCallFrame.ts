@@ -29,6 +29,9 @@ export function useCallFrame() {
           border: '0',
           background: '#000000',
         },
+        dailyConfig: {
+          experimentalChromeVideoTrackContentHint: 'detail',
+        },
         showLeaveButton: false,
         showFullscreenButton: false,
       });
@@ -38,6 +41,8 @@ export function useCallFrame() {
       await dailyFrame.join({
         url,
         userName: options.userName || 'Guest',
+        startVideoOff: false,
+        startAudioOff: false,
       });
 
       return dailyFrame;
