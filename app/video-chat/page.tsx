@@ -5,6 +5,7 @@ import { Mic, PhoneOff, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useCallFrame } from '@/hooks/useCallFrame';
+import { updateAuditScore, getCurrentScore, resetScore } from '@/ai-tools/update_audit_score';
 
 interface Message {
   id: number;
@@ -13,7 +14,7 @@ interface Message {
 }
 
 export default function VideoChat() {
-  const [auditScore, setAuditScore] = useState(100);
+  const [auditScore, setAuditScore] = useState(getCurrentScore());
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +25,9 @@ export default function VideoChat() {
     let cancelled = false;
 
     async function createCall() {
+      resetScore();
+      setAuditScore(getCurrentScore());
+      
       try {
         setError(null);
         const tavusResponse = await fetch('/api/tavus', { 
