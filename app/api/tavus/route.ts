@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     }
 
     // Return the URL in the expected format
-    const response = { conversation_url: data.url };
+    const response = data.conversation_url
     
     return new Response(JSON.stringify(response), {
       status: 200,
