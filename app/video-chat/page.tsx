@@ -75,56 +75,38 @@ export default function VideoChat() {
         console.log('[VideoChat] Attempting to join call with URL:', data.conversation_url);
         
         // Handle perception events from Tavus
-        const callFrame = await joinCall(data.conversation_url, { 
+        await joinCall(data.conversation_url, { 
           containerId: 'video-container', 
           userName: 'Food Safety Auditor',
-          onPerceptionEvent: (event: PerceptionEvent) => {
+          onPerceptionEvent: async (event: PerceptionEvent) => {
             if (event.event_type === 'conversation.perception_tool_call') {
               const { tool, args } = event.properties;
               
-              if (tool === 'update_audit_score') {
-                const score = updateAuditScore(args.severity);
-                setAuditScore(score);
-                
-                const violation = {
-                  name: args.violation_name,
-                  description: args.violation_name,
-                  severity: args.severity,
-                  timestamp: Date.now()
-                };
-                
-                logViolation(violation);
-                
-                const coaching = realTimeCoaching({
-                  violation: args.violation_name,
-                  description: args.violation_name,
-                  severity: args.severity
+              try {
+                const response = await fetch('/api/ai-tools', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ tool, args })
                 });
-                
-                setMessages(prev => [...prev, {
-                  id: Date.now(),
-                  text: coaching,
-                  isAI: true
-                }]);
-              } else if (tool === 'real_time_coaching') {
-                const coaching = realTimeCoaching({
-                  violation: args.violation_name,
-                  description: args.recommendation,
-                  severity: 'medium'
-                });
-                
-                setMessages(prev => [...prev, {
-                  id: Date.now(),
-                  text: coaching,
-                  isAI: true
-                }]);
-              } else if (tool === 'log_violation') {
-                logViolation({
-                  name: args.violation_name,
-                  description: args.violation_name,
-                  severity: args.severity,
-                  timestamp: Date.now()
-                });
+
+                if (!response.ok) {
+                  throw new Error('Failed to process tool call');
+                }
+
+                const { result } = await response.json();
+
+                // Update UI based on tool type
+                if (tool === 'update_audit_score') {
+                  setAuditScore(result);
+                } else if (tool === 'real_time_coaching') {
+                  setMessages(prev => [...prev, {
+                    id: Date.now(),
+                    text: result,
+                    isAI: true
+                  }]);
+                }
+              } catch (error) {
+                console.error('[VideoChat] Error processing tool call:', error);
               }
             }
           }
