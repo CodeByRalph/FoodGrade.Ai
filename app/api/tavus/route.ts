@@ -12,7 +12,7 @@ export async function POST() {
     const response = await fetch('https://tavusapi.com/v2/conversations', {
       method: 'POST',
       headers: {
-        'x-api-key': '483ca82d99f948e88d3a238c9d194b19',
+        'x-api-key': process.env.TAVUS_API_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
