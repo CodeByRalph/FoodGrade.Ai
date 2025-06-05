@@ -13,6 +13,8 @@ interface Message {
 }
 
 export default function VideoChat() {
+  const [auditScore, setAuditScore] = useState(100);
+  
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
