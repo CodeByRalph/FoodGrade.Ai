@@ -9,11 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Navigation } from '@/components/Navigation';
 import { getViolations } from '@/ai-tools/log_violation';
 import { getCurrentScore } from '@/ai-tools/update_audit_score';
-
+  
 export default function AuditOverview() {
   const currentScore = getCurrentScore();
-  const previousScore = 78;
-  const industryAverage = 82;
   
   const violations = getViolations();
   
@@ -21,97 +19,42 @@ export default function AuditOverview() {
   const mediumIssues = violations.filter(v => v.severity === 'medium').length;
   const lowIssues = violations.filter(v => v.severity === 'low').length;
   
+  const highViolations = violations.filter(v => v.severity === 'high').map(v => ({
+    title: v.name,
+    description: v.description,
+    impact: "Critical Safety Risk",
+    remediation: "Immediate correction required",
+    timeline: "Immediate",
+    icon: AlertCircle,
+    iconClass: "text-red-500",
+  }));
+  
+  const mediumViolations = violations.filter(v => v.severity === 'medium').map(v => ({
+    title: v.name,
+    description: v.description,
+    impact: "Moderate Risk",
+    remediation: "Correction needed within 24-48 hours",
+    timeline: "24-48 hours",
+    icon: AlertTriangle,
+    iconClass: "text-yellow-500",
+  }));
+  
+  const lowViolations = violations.filter(v => v.severity === 'low').map(v => ({
+    title: v.name,
+    description: v.description,
+    impact: "Minor Risk",
+    remediation: "Address during routine operations",
+    timeline: "7 days",
+    icon: AlertTriangle,
+    iconClass: "text-blue-500",
+  }));
+  
   const executiveSummary = {
     criticalIssues,
     strengths: violations.length === 0 ? 'All Standards Met' : `${3 - criticalIssues} Areas Meeting Standards`,
     riskLevel: criticalIssues > 0 ? 'High' : mediumIssues > 0 ? 'Moderate' : 'Low',
     description: `Audit identified ${criticalIssues} critical, ${mediumIssues} medium, and ${lowIssues} low priority issues requiring attention.`
   };
-  
-  const findings = {
-    high: [
-      {
-        title: "Improper Food Storage",
-        description: "Raw meats stored above ready-to-eat foods",
-        impact: "Cross-contamination risk",
-        remediation: "Reorganize storage and train staff",
-        timeline: "Immediate",
-        icon: AlertCircle,
-        iconClass: "text-red-500",
-      }
-    ],
-    medium: [
-      {
-        title: "Equipment Maintenance",
-        description: "Several refrigeration units showing temperature fluctuations",
-        impact: "Potential food safety risk",
-        remediation: "Schedule maintenance check",
-        timeline: "72 hours",
-        icon: AlertTriangle,
-        iconClass: "text-yellow-500",
-      }
-    ],
-    low: [
-      {
-        title: "Documentation Updates",
-        description: "Some cleaning logs incomplete",
-        impact: "Minor compliance gap",
-        remediation: "Refresh staff training",
-        timeline: "1 week",
-        icon: AlertTriangle,
-        iconClass: "text-blue-500",
-      }
-    ]
-  };
-
-  const categoryScores = [
-    {
-      name: "Food Safety",
-      score: 82,
-      benchmark: 85,
-    },
-    {
-      name: "Cleanliness",
-      score: 88,
-      benchmark: 80,
-    },
-    {
-      name: "Documentation",
-      score: 75,
-      benchmark: 82,
-    },
-  ];
-
-  const riskAssessment = [
-    {
-      category: "Financial",
-      level: "Medium",
-      details: "Potential fines from compliance issues",
-      icon: TrendingDown,
-      iconClass: "text-yellow-500",
-    },
-    {
-      category: "Operational",
-      level: "High",
-      details: "Storage and labeling issues affecting efficiency",
-      icon: AlertTriangle,
-      iconClass: "text-red-500",
-    },
-    {
-      category: "Compliance",
-      level: "Medium",
-      details: "Documentation gaps need addressing",
-      icon: AlertTriangle,
-      iconClass: "text-yellow-500",
-    },
-    {
-      category: "Security",
-      level: "Low",
-      details: "All security protocols properly maintained",
-      icon: CheckCircle2,
-      iconClass: "text-green-500",
-    },
-  ];
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -142,7 +85,7 @@ export default function AuditOverview() {
         
         <Card className="mb-8 p-6 relative">
           <h2 className="text-xl font-semibold mb-6">Score Analysis</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-2">Current Score</h3>
               <div className="flex items-center gap-4">
@@ -150,75 +93,14 @@ export default function AuditOverview() {
                 <span className="text-2xl font-bold">{currentScore}%</span>
               </div>
             </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Previous Score</h3>
-              <div className="flex items-center gap-4">
-                <Progress value={previousScore} className="flex-1" />
-                <span className="text-2xl font-bold">{previousScore}%</span>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Industry Average</h3>
-              <div className="flex items-center gap-4">
-                <Progress value={industryAverage} className="flex-1" />
-                <span className="text-2xl font-bold">{industryAverage}%</span>
-              </div>
-            </div>
           </div>
         </Card>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Category Scores</h2>
-            <div className="space-y-4">
-              {categoryScores.map((category, index) => (
-                <div key={index}>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-medium">{category.name}</span>
-                    <span className="text-gray-600">{category.score}%</span>
-                  </div>
-                  <Progress 
-                    value={category.score} 
-                    className="h-2"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Benchmark: {category.benchmark}%
-                  </p>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Risk Assessment</h2>
-            <div className="space-y-4">
-              {riskAssessment.map((risk, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <risk.icon className={`h-5 w-5 mt-0.5 ${risk.iconClass}`} />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium">{risk.category}</h3>
-                      <span className={`text-sm px-2 py-0.5 rounded ${
-                        risk.level === 'High' ? 'bg-red-100 text-red-800' :
-                        risk.level === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {risk.level}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600">{risk.details}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
 
         <div className="space-y-8 mb-8">
           <div>
             <h2 className="text-xl font-semibold mb-4">High Priority Findings</h2>
             <div className="space-y-4">
-              {findings.high.map((finding, index) => (
+              {highViolations.map((finding, index) => (
                 <Card key={index} className="p-4">
                   <div className="flex items-start gap-4">
                     <finding.icon className={`h-6 w-6 mt-1 ${finding.iconClass}`} />
@@ -244,7 +126,7 @@ export default function AuditOverview() {
           <div>
             <h2 className="text-xl font-semibold mb-4">Medium Priority Findings</h2>
             <div className="space-y-4">
-              {findings.medium.map((finding, index) => (
+              {mediumViolations.map((finding, index) => (
                 <Card key={index} className="p-4">
                   <div className="flex items-start gap-4">
                     <finding.icon className={`h-6 w-6 mt-1 ${finding.iconClass}`} />
@@ -270,7 +152,7 @@ export default function AuditOverview() {
           <div>
             <h2 className="text-xl font-semibold mb-4">Low Priority Findings</h2>
             <div className="space-y-4">
-              {findings.low.map((finding, index) => (
+              {lowViolations.map((finding, index) => (
                 <Card key={index} className="p-4">
                   <div className="flex items-start gap-4">
                     <finding.icon className={`h-6 w-6 mt-1 ${finding.iconClass}`} />
