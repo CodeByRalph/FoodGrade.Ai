@@ -57,7 +57,7 @@ export default function VideoChat() {
         callFrameRef.current = dailyFrame;
 
         await dailyFrame.join({
-          url: conversationUrl,
+          url: conversationUrl as string,
           userName: 'Food Safety Auditor',
         });
 
