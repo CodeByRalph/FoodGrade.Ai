@@ -16,11 +16,13 @@ export default function VideoChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const callWrapperRef = useRef<HTMLDivElement>(null);
   const callFrameRef = useRef<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     async function createCall() {
       try {
+        setError(null);
         // Create conversation through our API route
         const tavusResponse = await fetch('/api/tavus', {
           method: 'POST',
@@ -30,33 +32,59 @@ export default function VideoChat() {
         });
 
         if (!tavusResponse.ok) {
+          setError('Failed to create conversation');
           throw new Error('Failed to create conversation');
         }
 
         const { url: conversationUrl } = await tavusResponse.json();
 
-        if (!callWrapperRef.current) return;
+        if (!callWrapperRef.current) {
+          setError('Video container not ready');
+          return;
+        }
 
         const dailyFrame = DailyIframe.createFrame(callWrapperRef.current, {
           iframeStyle: {
             width: '100%',
             height: '100%',
-            border: 'none',
-            background: 'transparent',
+            border: '0',
+            background: '#000000',
           },
+          showLeaveButton: false,
+          showFullscreenButton: false,
         });
 
         callFrameRef.current = dailyFrame;
 
         await dailyFrame.join({
           url: conversationUrl,
+          userName: 'Food Safety Auditor',
         });
+
+        // Add event listeners for debugging
+        dailyFrame.on('joined-meeting', () => {
+          console.log('Successfully joined the meeting');
+        });
+
+        dailyFrame.on('error', (e: any) => {
+          console.error('Daily.co error:', e);
+          setError(`Video call error: ${e.errorMsg}`);
+        });
+
       } catch (err) {
         console.error('Error setting up call:', err);
+        setError(err instanceof Error ? err.message : 'Failed to setup video call');
       }
     }
 
     createCall();
+
+    // Cleanup
+    return () => {
+      if (callFrameRef.current) {
+        callFrameRef.current.destroy();
+      }
+    };
   }, []);
 
   const handleEndCall = async () => {
@@ -70,7 +98,13 @@ export default function VideoChat() {
     <main className="h-screen w-screen bg-black overflow-hidden relative">
       {/* Video Container */}
       <div className="h-full w-full flex items-center justify-center">
-        <div ref={callWrapperRef} className="w-full h-full" />
+        <div ref={callWrapperRef} className="w-full h-full relative">
+          {error && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+              <p className="text-white text-lg">{error}</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Messages Overlay */}
