@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST() {
   try {
-    const response = await fetch('https://api.tavus.io/v1/conversations', {
+    const response = await fetch('https://api.tavus.io/v2/conversations', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.TAVUS_API_KEY}`,
