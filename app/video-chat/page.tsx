@@ -40,19 +40,23 @@ export default function VideoChat() {
   const { joinCall, leaveCall, eventEmitter } = useCallFrame();
 
   useEffect(() => {
-    // Reset score and violations at start of new call
+    let cancelled = false;
+    
+    // Reset state at start
     resetScore();
     clearViolations();
-    return () => clearViolations();
-  }, []);
-
-  useEffect(() => {
+    setIsConnecting(true);
+    setAuditScore(getCurrentScore());
+    
+    // Set up event listeners
     const handleCallJoined = () => {
+      if (cancelled) return;
       setIsConnecting(false);
       setError(null);
     };
 
     const handleCallError = (err: Error) => {
+      if (cancelled) return;
       setIsConnecting(false);
       setError(err.message);
     };
@@ -60,19 +64,7 @@ export default function VideoChat() {
     eventEmitter.on('call-joined', handleCallJoined);
     eventEmitter.on('call-error', handleCallError);
 
-    return () => {
-      eventEmitter.off('call-joined', handleCallJoined);
-      eventEmitter.off('call-error', handleCallError);
-    };
-  }, [eventEmitter]);
-
-  useEffect(() => {
-    let cancelled = false;
-
     async function createCall() {
-      setIsConnecting(true);
-      setAuditScore(getCurrentScore());
-      
       try {
         setError(null);
         const tavusResponse = await fetch('/api/tavus', { 
@@ -152,10 +144,14 @@ export default function VideoChat() {
     createCall();
 
     return () => {
+      // Clean up all resources
       cancelled = true;
+      clearViolations();
+      eventEmitter.off('call-joined', handleCallJoined);
+      eventEmitter.off('call-error', handleCallError);
       leaveCall();
     };
-  }, []);
+  }, [eventEmitter, joinCall, leaveCall]);
 
   const handleEndCall = async () => {
     await leaveCall();
