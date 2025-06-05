@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server';
 
 export async function POST() {
   try {
+    if (!process.env.TAVUS_API_KEY) {
+      return NextResponse.json(
+        { error: 'Tavus API key is not configured' },
+        { status: 500 }
+      );
+    }
+
     const response = await fetch('https://api.tavus.io/v2/conversations', {
       method: 'POST',
       headers: {
@@ -15,7 +22,17 @@ export async function POST() {
     });
 
     if (!response.ok) {
-      throw new Error(`Tavus API error: ${response.status}`);
+      const errorData = await response.text();
+      console.error('Tavus API error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
+      
+      return NextResponse.json(
+        { error: `Tavus API error: ${response.status} - ${response.statusText}` },
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
@@ -23,7 +40,7 @@ export async function POST() {
   } catch (error) {
     console.error('Tavus API error:', error);
     return NextResponse.json(
-      { error: 'Failed to create conversation' },
+      { error: 'Failed to connect to Tavus API. Please check your network connection and try again.' },
       { status: 500 }
     );
   }
