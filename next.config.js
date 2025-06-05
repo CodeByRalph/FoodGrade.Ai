@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
   webpack: (config, { dev }) => {
     if (dev) {
       config.watchOptions = {
@@ -14,7 +13,11 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  transpilePackages: ['lucide-react'],
+  transpilePackages: [
+    'lucide-react',
+    '@daily-co/daily-js',
+    'recharts'
+  ],
   images: { unoptimized: true }
 };
 
