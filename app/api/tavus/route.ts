@@ -25,6 +25,10 @@ export async function POST(req: Request) {
     }
 
     const data = await tavusResponse.json();
+
+    console.log('Tavus data:', data);
+
+    
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
