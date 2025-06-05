@@ -23,7 +23,7 @@ export async function POST(req: Request) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        'persona_id': process.env.TAVUS_PERSONA_ID || '',
+        'persona_id': 'pede8c9ca8d8',
         'conversation_name': 'Safety Walkthrough',
       })
     });
