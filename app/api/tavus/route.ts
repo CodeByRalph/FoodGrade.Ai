@@ -17,8 +17,7 @@ export async function POST() {
       },
       body: JSON.stringify({
         conversation_name: "Audit Walkthrough",
-        persona_id: "pbf550eecb6c",
-        conversational_context: "You are about to interact with FoodGradeAI, a friendly and knowledgeable virtual food safety auditor designed for commercial kitchens. FoodGradeAI assists you by observing your kitchen environment through your device's camera, identifying food safety risks, and guiding you through compliance checks. It offers supportive feedback, asks questions about your procedures, and helps you resolve any issues it detects. FoodGradeAI's goal is to help you maintain a safe, clean, and audit-ready kitchen while making the compliance process as smooth and stress-free as possible."
+        persona_id: "pbf550eecb6c"
       }),
     });
 
