@@ -93,7 +93,6 @@ export function useCallFrame() {
       showLeaveButton: false,
       showFullscreenButton: false,
       dailyConfig: {
-        experimentalChromeVideoMutedUIFix: true,
         receiveSettings: {
           base: { maxQuality: 'high' },
         },
