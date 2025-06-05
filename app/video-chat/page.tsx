@@ -35,29 +35,32 @@ export default function VideoChat() {
   const [showDebug, setShowDebug] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectionState, setConnectionState] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
   const router = useRouter();
   const { joinCall, leaveCall, eventEmitter } = useCallFrame();
 
   useEffect(() => {
     let cancelled = false;
     
+    // Don't create multiple calls
+    if (connectionState !== 'idle') return;
+    
     // Reset state at start
     resetScore();
     clearViolations();
-    setIsConnecting(true);
+    setConnectionState('connecting');
     setAuditScore(getCurrentScore());
     
     // Set up event listeners
     const handleCallJoined = () => {
       if (cancelled) return;
-      setIsConnecting(false);
+      setConnectionState('connected');
       setError(null);
     };
 
     const handleCallError = (err: Error) => {
       if (cancelled) return;
-      setIsConnecting(false);
+      setConnectionState('error');
       setError(err.message);
     };
 
@@ -238,15 +241,16 @@ export default function VideoChat() {
       {/* Video Container */}
       <div className="h-full w-full flex items-center justify-center">
         <div id="video-container" className="w-full h-full relative">
-          {(error || isConnecting) && (
+          {connectionState !== 'connected' && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/80">
               <p className="text-white text-lg">
-                {isConnecting ? 'Connecting to video call...' : error}
+                {connectionState === 'connecting' ? 'Connecting to video call...' : 
+                 connectionState === 'error' ? error : 
+                 'Initializing...'}
               </p>
             </div>
           )}
         </div>
-      </div>
 
       {/* Messages Overlay */}
       <div className="absolute bottom-32 left-0 right-0 flex flex-col items-center gap-3 p-4">

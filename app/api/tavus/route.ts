@@ -19,11 +19,11 @@ export async function POST(req: Request) {
     const tavusResponse = await fetch('https://tavusapi.com/v2/conversations', {
       method: 'POST',
       headers: {
-        'x-api-key': process.env.TAVUS_API_KEY as string,
+        'x-api-key': process.env.TAVUS_API_KEY || '',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        'persona_id': 'pede8c9ca8d8',
+        'persona_id': process.env.TAVUS_PERSONA_ID || '',
         'conversation_name': 'Safety Walkthrough',
       })
     });
