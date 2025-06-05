@@ -27,3 +27,4 @@ export function updateAuditScore(
   const deduction = deductionTable[severity];
   currentScore = Math.max(0, currentScore - deduction);
   return currentScore;
+}
