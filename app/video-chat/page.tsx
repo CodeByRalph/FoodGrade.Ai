@@ -6,13 +6,14 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import DailyIframe from '@daily-co/daily-js';
 
+const TAVUS_API_KEY = process.env.NEXT_PUBLIC_TAVUS_API_KEY;
+const DAILY_ROOM_URL = process.env.NEXT_PUBLIC_DAILY_ROOM_URL;
+
 interface Message {
   id: number;
   text: string;
   isAI?: boolean;
 }
-
-const TAVUS_API_KEY = '483ca82d99f948e88d3a238c9d194b19';
 
 export default function VideoChat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -37,7 +38,7 @@ export default function VideoChat() {
         callFrameRef.current = dailyFrame;
 
         await dailyFrame.join({
-          url: 'https://foodgradeai.daily.co/audit-room',
+          url: DAILY_ROOM_URL,
           token: TAVUS_API_KEY,
         });
 
@@ -45,7 +46,7 @@ export default function VideoChat() {
         const tavusResponse = await fetch('https://api.tavus.io/v1/conversations', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${TAVUS_API_KEY}`,
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_TAVUS_API_KEY}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
