@@ -24,13 +24,19 @@ export default function VideoChat() {
     async function createCall() {
       try {
         setError(null);
-        const tavusResponse = await fetch('/api/tavus', { method: 'POST' });
-        const data = await tavusResponse.json();
-
-        await joinCall(data.conversation_url, {
-          containerId: 'video-container',
-          userName: 'Food Safety Auditor',
+        const tavusResponse = await fetch('/api/tavus', { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
         });
+        
+        if (!tavusResponse.ok) {
+          throw new Error(`API error: ${tavusResponse.statusText}`);
+        }
+        
+        const data = await tavusResponse.json();
+        if (!data.conversation_url) throw new Error('Missing conversation URL from API response');
+        
+        await joinCall(data.conversation_url, { containerId: 'video-container', userName: 'Food Safety Auditor' });
       } catch (err) {
         console.error('Error setting up call:', err);
         setError(err instanceof Error ? err.message : 'Failed to setup video call');
