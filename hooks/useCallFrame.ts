@@ -31,7 +31,6 @@ export function useCallFrame() {
           background: '#000000',
         },
         dailyConfig: {
-          experimentalChromeVideoTrackContentHint: 'detail',
         },
         showLeaveButton: false,
         showFullscreenButton: false,
