@@ -1,13 +1,5 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
+export async function POST(req: Request) {
   try {
     const tavusResponse = await fetch('https://tavusapi.com/v2/conversations', {
       method: 'POST',
@@ -19,17 +11,28 @@ export default async function handler(
         'persona_id': 'p589fe814765',
         'conversation_name': 'Safety Walkthrough',
       }
+      // Uncomment and add if you want to pass any body data
+      // body: JSON.stringify({ ... }),
     });
 
     if (!tavusResponse.ok) {
       const errorText = await tavusResponse.text();
-      return res.status(tavusResponse.status).json({ error: errorText });
+      return new Response(JSON.stringify({ error: errorText }), {
+        status: tavusResponse.status,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const data = await tavusResponse.json();
-    return res.status(200).json(data);
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('[Tavus API] Error:', error);
-    return res.status(500).json({ error: 'Failed to create Tavus conversation' });
+    return new Response(JSON.stringify({ error: 'Failed to create Tavus conversation' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
