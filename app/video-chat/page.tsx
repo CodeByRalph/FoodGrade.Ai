@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import DailyIframe from '@daily-co/daily-js';
 
 const TAVUS_API_KEY = process.env.NEXT_PUBLIC_TAVUS_API_KEY;
-const DAILY_ROOM_URL = process.env.NEXT_PUBLIC_DAILY_ROOM_URL;
 
 interface Message {
   id: number;
@@ -24,6 +23,22 @@ export default function VideoChat() {
   useEffect(() => {
     async function createCall() {
       try {
+        // Create a Daily.js room
+        const response = await fetch('https://api.daily.co/v1/rooms', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_DAILY_API_KEY}`,
+          },
+          body: JSON.stringify({
+            properties: {
+              exp: Math.round(Date.now() / 1000) + 3600, // Expire in 1 hour
+            },
+          }),
+        });
+
+        const { url: roomUrl } = await response.json();
+
         if (!callWrapperRef.current) return;
 
         const dailyFrame = DailyIframe.createFrame(callWrapperRef.current, {
@@ -38,7 +53,7 @@ export default function VideoChat() {
         callFrameRef.current = dailyFrame;
 
         await dailyFrame.join({
-          url: DAILY_ROOM_URL,
+          url: roomUrl,
           token: TAVUS_API_KEY,
         });
 
@@ -50,7 +65,6 @@ export default function VideoChat() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            persona: 'food-safety-auditor',
             initialPrompt: 'Begin food safety audit inspection',
           }),
         });
@@ -142,4 +156,3 @@ export default function VideoChat() {
       </div>
     </main>
   );
-}
