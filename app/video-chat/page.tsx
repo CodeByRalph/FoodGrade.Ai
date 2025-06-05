@@ -35,7 +35,7 @@ export default function VideoChat() {
   const [showDebug, setShowDebug] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [connectionState, setConnectionState] = useState<'idle' | 'connecting' | 'connected' | 'error' | 'rate-limited'>('idle');
+  const [connectionState, setConnectionState] = useState<'idle' | 'connecting' | 'connected' | 'error' | 'rate-limited' | 'reconnecting'>('idle');
   const router = useRouter();
   const { joinCall, leaveCall, eventEmitter } = useCallFrame();
 
@@ -54,17 +54,40 @@ export default function VideoChat() {
     // Set up event listeners
     const handleCallJoined = () => {
       if (cancelled) return;
+      console.log('[VideoChat] Call joined successfully');
       setConnectionState('connected');
       setError(null);
     };
 
+    const handleCallJoining = () => {
+      if (cancelled) return;
+      console.log('[VideoChat] Call joining...');
+      setConnectionState('connecting');
+    };
+
+    const handleCallReconnecting = () => {
+      if (cancelled) return;
+      console.log('[VideoChat] Call reconnecting...');
+      setConnectionState('reconnecting');
+    };
+
+    const handleCallRetrying = (attempt: number) => {
+      if (cancelled) return;
+      console.log(`[VideoChat] Retrying connection (attempt ${attempt})...`);
+      setError(`Connection attempt ${attempt}/3...`);
+    };
+
     const handleCallError = (err: Error) => {
       if (cancelled) return;
+      console.error('[VideoChat] Call error:', err);
       setConnectionState('error');
       setError(err.message);
     };
 
     eventEmitter.on('call-joined', handleCallJoined);
+    eventEmitter.on('call-joining', handleCallJoining);
+    eventEmitter.on('call-reconnecting', handleCallReconnecting);
+    eventEmitter.on('call-retrying', handleCallRetrying);
     eventEmitter.on('call-error', handleCallError);
 
     async function createCall() {
@@ -155,6 +178,9 @@ export default function VideoChat() {
       cancelled = true;
       clearViolations();
       eventEmitter.off('call-joined', handleCallJoined);
+      eventEmitter.off('call-joining', handleCallJoining);
+      eventEmitter.off('call-reconnecting', handleCallReconnecting);
+      eventEmitter.off('call-retrying', handleCallRetrying);
       eventEmitter.off('call-error', handleCallError);
       leaveCall();
     };
@@ -249,6 +275,7 @@ export default function VideoChat() {
             <div className="absolute inset-0 flex items-center justify-center bg-black/80">
               <p className="text-white text-lg">
                 {connectionState === 'connecting' ? 'Connecting to video call...' : 
+                 connectionState === 'reconnecting' ? 'Reconnecting...' :
                  connectionState === 'rate-limited' ? 'Maximum conversations reached. Please try again later.' :
                  connectionState === 'error' ? error : 
                  'Initializing...'}
