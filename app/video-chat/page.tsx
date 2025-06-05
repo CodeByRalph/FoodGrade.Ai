@@ -26,17 +26,8 @@ export default function VideoChat() {
         setError(null);
         // Create conversation through our API route
        const tavusResponse = await fetch('/api/tavus', { method: 'POST' });
-       console.log('Status:', tavusResponse.status);
-       const text = await tavusResponse.text();
-       console.log('Raw response text:', text);
-       let data;
-       try {
-  
-         console.log('Parsed JSON:', text);
-       } catch (err) {
-         console.error('Failed to parse JSON:', err);
-         data = null;
-       }
+       const data = await tavusResponse.json()
+       console.log('Parsed JSON: ', data)
 
 
 
