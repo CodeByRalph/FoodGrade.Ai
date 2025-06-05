@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import DailyIframe from '@daily-co/daily-js';
-import { EventEmitter } from 'events';
+import EventEmitter from 'eventemitter3';
 
 interface PerceptionEvent {
   message_type: string;
