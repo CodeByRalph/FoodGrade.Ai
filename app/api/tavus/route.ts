@@ -27,8 +27,11 @@ export async function POST(req: Request) {
       })
     });
 
+    console.log('[Tavus API] Response status:', tavusResponse.status);
+
     if (!tavusResponse.ok) {
       const errorText = await tavusResponse.text();
+      console.error('[Tavus API] Error response:', errorText);
       return new Response(JSON.stringify({ error: errorText }), {
         status: tavusResponse.status,
         headers,
@@ -36,9 +39,11 @@ export async function POST(req: Request) {
     }
 
     const data = await tavusResponse.json();
+    console.log('[Tavus API] Response data:', data);
     
     // Validate that the URL exists and is a string
     if (!data.conversation_url || typeof data.conversation_url !== 'string') {
+      console.error('[Tavus API] Invalid conversation URL:', data);
       return new Response(JSON.stringify({ error: 'Invalid or missing conversation URL from Tavus API' }), {
         status: 400,
         headers,

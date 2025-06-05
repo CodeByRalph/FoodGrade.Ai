@@ -39,11 +39,22 @@ export default function VideoChat() {
         
         const data = await tavusResponse.json();
         
+        console.log('[VideoChat] Received conversation URL:', data.conversation_url);
+        
         if (!data.conversation_url) throw new Error('Missing conversation URL from API response');
         
+        console.log('[VideoChat] Attempting to join call with URL:', data.conversation_url);
         await joinCall(data.conversation_url, { containerId: 'video-container', userName: 'Food Safety Auditor' });
+        console.log('[VideoChat] Successfully joined call');
       } catch (err) {
-        console.error('Error setting up call:', err);
+        console.error('[VideoChat] Error setting up call:', err);
+        if (err instanceof Error) {
+          console.error('[VideoChat] Error details:', {
+            message: err.message,
+            stack: err.stack,
+            name: err.name
+          });
+        }
         setError(err instanceof Error ? err.message : 'Failed to setup video call');
       }
     }

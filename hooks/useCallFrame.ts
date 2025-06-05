@@ -12,6 +12,7 @@ export function useCallFrame() {
   const joinCall = async (url: string, options: UseCallFrameOptions) => {
     try {
       const container = document.getElementById(options.containerId);
+      console.log('[useCallFrame] Joining call with URL:', url);
       if (!container) {
         throw new Error('Container element not found');
       }
@@ -45,9 +46,17 @@ export function useCallFrame() {
         startAudioOff: false,
       });
 
+      console.log('[useCallFrame] Successfully created Daily.co frame');
       return dailyFrame;
     } catch (error) {
-      console.error('Error joining call:', error);
+      console.error('[useCallFrame] Error joining call:', error);
+      if (error instanceof Error) {
+        console.error('[useCallFrame] Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
+      }
       throw error;
     }
   };
