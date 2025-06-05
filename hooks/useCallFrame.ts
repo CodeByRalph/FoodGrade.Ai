@@ -27,22 +27,39 @@ export function useCallFrame() {
           width: '100%',
           height: '100%',
           border: '0',
-          background: '#000000',
+          background: '#000000'
         },
         dailyConfig: {
-          experimentalChromeVideoTrackContentHint: 'detail',
+          experimentalChromeVideoTrackContentHint: 'detail'
         },
+        showLocalVideo: true,
+        allowWakeLock: true,
         showLeaveButton: false,
         showFullscreenButton: false,
+        subscribeToTracksAutomatically: true
       });
 
       callFrameRef.current = dailyFrame;
+
+      // Add event listeners for connection status
+      dailyFrame.on('joining-meeting', () => {
+        console.log('Joining meeting...');
+      });
+
+      dailyFrame.on('joined-meeting', () => {
+        console.log('Successfully joined meeting');
+      });
+
+      dailyFrame.on('error', (e: Error) => {
+        console.error('Daily.co error:', e);
+        throw new Error(`Daily.co connection error: ${e.message}`);
+      });
 
       await dailyFrame.join({
         url,
         userName: options.userName || 'Guest',
         startVideoOff: false,
-        startAudioOff: false,
+        startAudioOff: false
       });
 
       return dailyFrame;
