@@ -35,9 +35,12 @@ export default function VideoChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const { joinCall, leaveCall } = useCallFrame();
+  const { joinCall, leaveCall, callFrame } = useCallFrame();
 
   useEffect(() => {
+    // Reset score and violations at start of new call
+    resetScore();
+    clearViolations();
     return () => clearViolations();
   }, []);
 
@@ -45,7 +48,6 @@ export default function VideoChat() {
     let cancelled = false;
 
     async function createCall() {
-      resetScore();
       setAuditScore(getCurrentScore());
       
       try {
@@ -70,14 +72,20 @@ export default function VideoChat() {
         if (!data.conversation_url) throw new Error('Missing conversation URL from API response');
         
         console.log('[VideoChat] Attempting to join call with URL:', data.conversation_url);
+        
+        // Handle perception events from Tavus
         const callFrame = await joinCall(data.conversation_url, { 
           containerId: 'video-container', 
           userName: 'Food Safety Auditor',
-          onPerceptionEvent: (event) => {
+          onPerceptionEvent: (event: PerceptionEvent) => {
+            console.log('[VideoChat] Received perception event:', event);
+            
             // Find matching violation by tool name
             const violation = violations.find(v => v.id === event.properties.name);
               
             if (violation) {
+              console.log('[VideoChat] Found matching violation:', violation);
+              
               // Handle the violation and get results
               const { score, message } = handleViolation(violation);
               
@@ -90,6 +98,8 @@ export default function VideoChat() {
                 text: message,
                 isAI: true
               }]);
+            } else {
+              console.log('[VideoChat] No matching violation found for:', event.properties.name);
             }
           }
         });

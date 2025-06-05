@@ -26,10 +26,11 @@ export function handleViolation(violation: Violation): ViolationHandlerResult {
   // Update the score based on severity
   const newScore = updateAuditScore(violation.severity);
 
+  const oldScore = getCurrentScore();
   console.log('[handleViolation] Score updated:', {
-    oldScore: newScore,
+    oldScore,
     newScore,
-    deduction: newScore - newScore
+    deduction: oldScore - newScore
   });
 
   // Get coaching message
