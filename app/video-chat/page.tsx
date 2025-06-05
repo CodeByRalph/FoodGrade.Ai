@@ -27,8 +27,8 @@ export default function VideoChat() {
         // Create conversation through our API route
        const tavusResponse = await fetch('/api/tavus', { method: 'POST' });
        const data = await tavusResponse.json()
-       console.log('Parsed JSON: ', data)
-
+       
+       const conversationUrl = data.conversation_url
 
 
         if (!callWrapperRef.current) {
