@@ -25,9 +25,15 @@ export function useCallFrame() {
   const callFrameRef = useRef<any>(null);
   const retryCount = useRef(0);
   const MAX_RETRIES = 3;
-  const RETRY_DELAY = 2000;
+  const RETRY_DELAY = 3000;
 
   const setupEventListeners = (frame: any, options: UseCallFrameOptions) => {
+    // Handle joining state
+    frame.on('joining-meeting', () => {
+      console.log('[Daily] Joining meeting...');
+      eventEmitter.emit('call-joining');
+    });
+
     // Handle perception events
     if (options.onPerceptionEvent) {
       frame.on('app-message', (event: any) => {
@@ -51,6 +57,28 @@ export function useCallFrame() {
     frame.on('error', (error: any) => {
       console.error('[Daily] Error:', error);
       eventEmitter.emit('call-error', error);
+      
+      // Attempt to reconnect on network errors
+      if (error?.errorMsg?.includes('network')) {
+        console.log('[Daily] Network error detected, attempting to reconnect...');
+        eventEmitter.emit('call-reconnecting');
+      }
+    });
+
+    // Handle network quality changes
+    frame.on('network-quality-change', (quality: any) => {
+      console.log('[Daily] Network quality changed:', quality);
+      if (quality.threshold === 'none') {
+        eventEmitter.emit('call-reconnecting');
+      }
+    });
+
+    // Handle network connection changes
+    frame.on('network-connection', ({ type, event }: any) => {
+      console.log('[Daily] Network connection event:', type, event);
+      if (type === 'interrupted') {
+        eventEmitter.emit('call-reconnecting');
+      }
     });
   };
 
@@ -64,6 +92,12 @@ export function useCallFrame() {
       },
       showLeaveButton: false,
       showFullscreenButton: false,
+      dailyConfig: {
+        experimentalChromeVideoMutedUIFix: true,
+        receiveSettings: {
+          base: { maxQuality: 'high' },
+        },
+      }
     });
   };
 
@@ -91,8 +125,8 @@ export function useCallFrame() {
       await dailyFrame.join({
         url,
         userName: options.userName || 'Guest',
-        startVideoOff: false,
-        startAudioOff: false,
+        startVideoOff: true,
+        startAudioOff: true,
         showLocalVideo: true,
         showParticipantsBar: false,
       });
@@ -107,6 +141,7 @@ export function useCallFrame() {
       if (retry && retryCount.current < MAX_RETRIES) {
         retryCount.current++;
         console.log(`[useCallFrame] Retrying... Attempt ${retryCount.current}`);
+        eventEmitter.emit('call-retrying', retryCount.current);
         
         return new Promise((resolve) => {
           setTimeout(() => {
@@ -122,6 +157,7 @@ export function useCallFrame() {
   const leaveCall = async () => {
     if (callFrameRef.current) {
       try {
+        eventEmitter.emit('call-leaving');
         await callFrameRef.current.leave();
       } catch (error) {
         console.error('[useCallFrame] Error leaving call:', error);
