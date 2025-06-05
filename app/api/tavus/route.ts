@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     const data = await tavusResponse.json();
     
     // Validate that the URL exists and is a string
-    if (!data.url || typeof data.url !== 'string') {
+    if (!data.conversation_url || typeof data.conversation_url !== 'string') {
       return new Response(JSON.stringify({ error: 'Invalid or missing conversation URL from Tavus API' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
