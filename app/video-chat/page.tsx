@@ -6,8 +6,6 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import DailyIframe from '@daily-co/daily-js';
 
-const TAVUS_API_KEY = process.env.NEXT_PUBLIC_TAVUS_API_KEY;
-
 interface Message {
   id: number;
   text: string;
@@ -23,21 +21,20 @@ export default function VideoChat() {
   useEffect(() => {
     async function createCall() {
       try {
-        // Create a Daily.js room
-        const response = await fetch('https://api.daily.co/v1/rooms', {
+        // Initialize Tavus conversation
+        const tavusResponse = await fetch('https://api.tavus.io/v1/conversations', {
           method: 'POST',
           headers: {
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_TAVUS_API_KEY}`,
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_DAILY_API_KEY}`,
           },
           body: JSON.stringify({
-            properties: {
-              exp: Math.round(Date.now() / 1000) + 3600, // Expire in 1 hour
-            },
+            persona_id: "p589fe814765",
+            conversation_name: "Food Safety Walkthrough"
           }),
         });
 
-        const { url: roomUrl } = await response.json();
+        const { url: conversationUrl } = await tavusResponse.json();
 
         if (!callWrapperRef.current) return;
 
@@ -53,57 +50,10 @@ export default function VideoChat() {
         callFrameRef.current = dailyFrame;
 
         await dailyFrame.join({
-          url: roomUrl,
-          token: TAVUS_API_KEY,
+          url: conversationUrl,
         });
-
-        // Initialize Tavus conversation
-        const tavusResponse = await fetch('https://api.tavus.io/v1/conversations', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_TAVUS_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            initialPrompt: 'Begin food safety audit inspection',
-          }),
-        });
-
-        const { conversationId } = await tavusResponse.json();
-        startConversation(conversationId);
-
       } catch (err) {
         console.error('Error setting up call:', err);
-      }
-    }
-
-    createCall();
-
-    return () => {
-      if (callFrameRef.current) {
-        callFrameRef.current.destroy();
-      }
-    };
-  }, []);
-
-  const startConversation = useCallback(async (conversationId: string) => {
-    const eventSource = new EventSource(
-      `https://api.tavus.io/v1/conversations/${conversationId}/stream`
-    );
-
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setMessages(prev => [...prev, {
-        id: Date.now(),
-        text: data.transcript,
-        isAI: true,
-      }]);
-    };
-
-    eventSource.onerror = () => {
-      eventSource.close();
-    };
-  }, []);
 
   const handleEndCall = async () => {
     if (callFrameRef.current) {
