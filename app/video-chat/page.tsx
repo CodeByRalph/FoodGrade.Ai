@@ -246,7 +246,7 @@ export default function VideoChat() {
       <div className="h-full w-full flex items-center justify-center">
         <div id="video-container" className="w-full h-full relative">
           {connectionState !== 'connected' && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/80\" style={{ zIndex: 2 }}>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/80">
               <p className="text-white text-lg">
                 {connectionState === 'connecting' ? 'Connecting to video call...' : 
                  connectionState === 'rate-limited' ? 'Maximum conversations reached. Please try again later.' :
@@ -256,8 +256,9 @@ export default function VideoChat() {
             </div>
           )}
         </div>
+      </div>
 
-        {/* Messages Overlay */}
+      {/* Messages Overlay */}
         <div className="absolute bottom-32 left-0 right-0 flex flex-col items-center gap-3 p-4">
           {messages.map(message => (
             <div
