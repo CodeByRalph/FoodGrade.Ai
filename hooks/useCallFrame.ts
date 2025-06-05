@@ -60,12 +60,10 @@ export function useCallFrame() {
         width: '100%',
         height: '100%',
         border: '0',
-        background: 'none'
+        background: '#000000',
       },
-      showLocalVideo: true,
-      showParticipantsBar: false,
       showLeaveButton: false,
-      showFullscreenButton: false
+      showFullscreenButton: false,
     });
   };
 

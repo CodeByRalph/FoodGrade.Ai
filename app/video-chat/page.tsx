@@ -186,6 +186,7 @@ export default function VideoChat() {
   };
 
   return (
+    <main className="h-screen w-screen bg-black overflow-hidden relative">
       {/* Debug Panel */}
       <div className={cn(
         "absolute top-0 right-0 bg-black/80 backdrop-blur-sm p-4 text-white transition-transform duration-300",
@@ -255,9 +256,8 @@ export default function VideoChat() {
             </div>
           )}
         </div>
-      </div>
 
-      {/* Messages Overlay */}
+        {/* Messages Overlay */}
         <div className="absolute bottom-32 left-0 right-0 flex flex-col items-center gap-3 p-4">
           {messages.map(message => (
             <div
@@ -295,6 +295,7 @@ export default function VideoChat() {
             <p className="text-white/80 text-sm">Score: {auditScore}</p>
           </div>
         </div>
-    </div>
+      </div>
+    </main>
   );
 }
