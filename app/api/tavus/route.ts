@@ -1,6 +1,7 @@
 
 export async function POST(req: Request) {
   try {
+    console.log('API route hit');
     const tavusResponse = await fetch('https://tavusapi.com/v2/conversations', {
       method: 'POST',
       headers: {
