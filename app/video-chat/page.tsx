@@ -79,54 +79,53 @@ export default function VideoChat() {
           containerId: 'video-container', 
           userName: 'Food Safety Auditor',
           onPerceptionEvent: (event: PerceptionEvent) => {
-            console.log('[VideoChat] Received perception event:', event);
-            
-            const toolName = event.properties.name;
-            const args = event.properties.arguments;
-            
-            if (toolName === 'update_audit_score') {
-              const score = updateAuditScore(args.severity);
-              setAuditScore(score);
+            if (event.event_type === 'conversation.perception_tool_call') {
+              const { tool, args } = event.properties;
               
-              const violation = {
-                name: args.violation_name,
-                description: args.violation_name,
-                severity: args.severity,
-                timestamp: Date.now()
-              };
-              
-              logViolation(violation);
-              
-              const coaching = realTimeCoaching({
-                violation: args.violation_name,
-                description: args.violation_name,
-                severity: args.severity
-              });
-              
-              setMessages(prev => [...prev, {
-                id: Date.now(),
-                text: coaching,
-                isAI: true
-              }]);
-            } else if (toolName === 'real_time_coaching') {
-              const coaching = realTimeCoaching({
-                violation: args.violation_name,
-                description: args.recommendation,
-                severity: 'medium'
-              });
-              
-              setMessages(prev => [...prev, {
-                id: Date.now(),
-                text: coaching,
-                isAI: true
-              }]);
-            } else if (toolName === 'log_violation') {
-              logViolation({
-                name: args.violation_name,
-                description: args.violation_name,
-                severity: args.severity,
-                timestamp: Date.now()
-              });
+              if (tool === 'update_audit_score') {
+                const score = updateAuditScore(args.severity);
+                setAuditScore(score);
+                
+                const violation = {
+                  name: args.violation_name,
+                  description: args.violation_name,
+                  severity: args.severity,
+                  timestamp: Date.now()
+                };
+                
+                logViolation(violation);
+                
+                const coaching = realTimeCoaching({
+                  violation: args.violation_name,
+                  description: args.violation_name,
+                  severity: args.severity
+                });
+                
+                setMessages(prev => [...prev, {
+                  id: Date.now(),
+                  text: coaching,
+                  isAI: true
+                }]);
+              } else if (tool === 'real_time_coaching') {
+                const coaching = realTimeCoaching({
+                  violation: args.violation_name,
+                  description: args.recommendation,
+                  severity: 'medium'
+                });
+                
+                setMessages(prev => [...prev, {
+                  id: Date.now(),
+                  text: coaching,
+                  isAI: true
+                }]);
+              } else if (tool === 'log_violation') {
+                logViolation({
+                  name: args.violation_name,
+                  description: args.violation_name,
+                  severity: args.severity,
+                  timestamp: Date.now()
+                });
+              }
             }
           }
         });
