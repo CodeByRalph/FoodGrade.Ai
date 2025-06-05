@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Mic, PhoneOff, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import DailyIframe from '@daily-co/daily-js';
+import { useCallFrame } from '@/hooks/useCallFrame';
 
 interface Message {
   id: number;
@@ -14,87 +14,39 @@ interface Message {
 
 export default function VideoChat() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const callWrapperRef = useRef<HTMLDivElement>(null);
-  const callFrameRef = useRef<any>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { joinCall, leaveCall } = useCallFrame();
 
   useEffect(() => {
     let cancelled = false;
-    console.log("useEffect fired");
+
     async function createCall() {
       try {
         setError(null);
-        // Create conversation through our API route
-       const tavusResponse = await fetch('/api/tavus', { method: 'POST' });
-       const data = await tavusResponse.json()
-       
-       const conversationUrl = data.conversation_url
-        console.log(conversationUrl)
+        const tavusResponse = await fetch('/api/tavus', { method: 'POST' });
+        const data = await tavusResponse.json();
 
-
-        if (!callWrapperRef.current) {
-          setError('Video container not ready');
-          return;
-        }
-
-        // Defensive again
-      if (callFrameRef.current) {
-        callFrameRef.current.destroy();
-        callFrameRef.current = null;
-      }
-
-        const dailyFrame = DailyIframe.createFrame(callWrapperRef.current, {
-          iframeStyle: {
-            width: '100%',
-            height: '100%',
-            border: '0',
-            background: '#000000',
-          },
-          showLeaveButton: false,
-          showFullscreenButton: false,
-        });
-
-        callFrameRef.current = dailyFrame;
-
-        await dailyFrame.join({
-          url: conversationUrl as string,
+        await joinCall(data.conversation_url, {
+          containerId: 'video-container',
           userName: 'Food Safety Auditor',
         });
-
-        // Add event listeners for debugging
-        dailyFrame.on('joined-meeting', () => {
-          console.log('Successfully joined the meeting');
-        });
-
-        dailyFrame.on('error', (e: any) => {
-          console.error('Daily.co error:', e);
-          setError(`Video call error: ${e.errorMsg}`);
-        });
-
       } catch (err) {
         console.error('Error setting up call:', err);
         setError(err instanceof Error ? err.message : 'Failed to setup video call');
       }
     }
 
-
     createCall();
 
-    // Cleanup
     return () => {
       cancelled = true;
-      if (callFrameRef.current) {
-        callFrameRef.current.destroy();
-        callFrameRef.current = null;
-      }
+      leaveCall();
     };
   }, []);
 
   const handleEndCall = async () => {
-    if (callFrameRef.current) {
-      await callFrameRef.current.destroy();
-    }
+    await leaveCall();
     router.push('/audit-overview');
   };
 
@@ -102,7 +54,7 @@ export default function VideoChat() {
     <main className="h-screen w-screen bg-black overflow-hidden relative">
       {/* Video Container */}
       <div className="h-full w-full flex items-center justify-center">
-        <div ref={callWrapperRef} className="w-full h-full relative">
+        <div id="video-container" className="w-full h-full relative">
           {error && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/80">
               <p className="text-white text-lg">{error}</p>
