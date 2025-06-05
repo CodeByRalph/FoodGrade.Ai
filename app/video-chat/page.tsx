@@ -5,10 +5,10 @@ import { Mic, PhoneOff, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useCallFrame } from '@/hooks/useCallFrame';
-import { updateAuditScore, getCurrentScore, resetScore } from '@/ai-tools/update_audit_score'; 
-import { logViolation, clearViolations } from '@/ai-tools/log_violation';
-import { realTimeCoaching } from '@/ai-tools/real_time_coaching';
+import { getCurrentScore, resetScore } from '@/ai-tools/update_audit_score';
+import { clearViolations } from '@/ai-tools/log_violation';
 import { violations } from '@/lib/violations';
+import { handleViolation } from '@/lib/handle-violation';
 
 interface Message {
   id: number;
@@ -76,29 +76,16 @@ export default function VideoChat() {
             const violation = violations.find(v => v.id === event.properties.name);
               
             if (violation) {
-              // Log the violation
-              logViolation({
-                name: violation.id,
-                description: violation.description || violation.query,
-                severity: violation.severity,
-                timestamp: Date.now()
-              });
-                
-              // Update score
-              const newScore = updateAuditScore(violation.severity);
-              setAuditScore(newScore);
-                
-              // Get coaching message
-              const coaching = realTimeCoaching({
-                violation: violation.id,
-                description: violation.description || violation.query,
-                severity: violation.severity
-              });
+              // Handle the violation and get results
+              const { score, message } = handleViolation(violation);
+              
+              // Update UI
+              setAuditScore(score);
                 
               // Add coaching message
               setMessages(prev => [...prev, {
                 id: Date.now(),
-                text: coaching,
+                text: message,
                 isAI: true
               }]);
             }
