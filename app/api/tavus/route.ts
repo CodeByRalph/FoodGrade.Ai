@@ -19,11 +19,11 @@ export async function POST(req: Request) {
     const tavusResponse = await fetch('https://tavusapi.com/v2/conversations', {
       method: 'POST',
       headers: {
-        'x-api-key': process.env.TAVUS_API_KEY || '',
+        'x-api-key': process.env.TAVUS_API_KEY as string,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        'persona_id': 'pede8c9ca8d8',
+        'persona_id': process.env.TAVUS_PERSONA_ID as string,
         'conversation_name': 'Safety Walkthrough',
       })
     });
@@ -33,6 +33,12 @@ export async function POST(req: Request) {
     if (!tavusResponse.ok) {
       const errorText = await tavusResponse.text();
       console.error('[Tavus API] Error response:', errorText);
+      if (tavusResponse.status === 429) {
+        return new Response(JSON.stringify({ error: 'Maximum concurrent conversations reached' }), {
+          status: 429,
+          headers,
+        });
+      }
       return new Response(JSON.stringify({ error: errorText }), {
         status: tavusResponse.status,
         headers,

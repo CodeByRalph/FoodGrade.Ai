@@ -35,7 +35,7 @@ export default function VideoChat() {
   const [showDebug, setShowDebug] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [connectionState, setConnectionState] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
+  const [connectionState, setConnectionState] = useState<'idle' | 'connecting' | 'connected' | 'error' | 'rate-limited'>('idle');
   const router = useRouter();
   const { joinCall, leaveCall, eventEmitter } = useCallFrame();
 
@@ -76,6 +76,10 @@ export default function VideoChat() {
         });
         
         if (!tavusResponse.ok) {
+          if (tavusResponse.status === 429) {
+            setConnectionState('rate-limited');
+            throw new Error('Maximum concurrent conversations reached. Please try again later.');
+          }
           const errorData = await tavusResponse.json().catch(() => null);
           throw new Error(
             errorData?.error || 
@@ -245,6 +249,7 @@ export default function VideoChat() {
             <div className="absolute inset-0 flex items-center justify-center bg-black/80">
               <p className="text-white text-lg">
                 {connectionState === 'connecting' ? 'Connecting to video call...' : 
+                 connectionState === 'rate-limited' ? 'Maximum conversations reached. Please try again later.' :
                  connectionState === 'error' ? error : 
                  'Initializing...'}
               </p>
