@@ -75,18 +75,18 @@ export default function LandingPage() {
           </div>
 
           {/* Right: Animated AI Avatar / App Mockup */}
-          <div className="relative flex justify-center lg:justify-end">
-            <div className="relative w-[340px] h-[620px] md:w-[400px] md:h-[720px] flex items-center justify-center">
+          <div className="relative flex justify-center lg:justify-end h-full">
+            <div className="relative w-[340px] h-[680px] md:w-[400px] md:h-[800px] flex items-center justify-center">
               {/* AI Avatar animation, fallback to static if no animation */}
               <Image
                 src="/HeroMockup.png"
                 alt="AI Food Safety Auditor"
                 fill
-                className="object-cover rounded-3xl border-8 border-white shadow-2xl z-10"
+                className="object-cover rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-10"
                 priority
               />
               {/* Soft mesh glow */}
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[#2563EB]/10 via-[#22D3A5]/15 to-[#38BDF8]/5 blur-2xl -z-10" />
+              <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-[#2563EB]/10 via-[#22D3A5]/15 to-[#38BDF8]/5 blur-2xl -z-10" />
               {/* Futuristic HUD Overlay */}
               <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] h-10 bg-gradient-to-r from-[#22D3A5]/30 to-[#2563EB]/20 blur-md rounded-full opacity-80" />
             </div>
