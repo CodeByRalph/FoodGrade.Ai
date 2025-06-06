@@ -103,7 +103,7 @@ export default function LandingPage() {
             <div className="absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-[#2563EB]/20 to-[#22D3A5]/20 rounded-full blur-xl" />
             <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-tr from-[#22D3A5]/20 to-[#2563EB]/20 rounded-full blur-xl" />
           </div>
-        </div>
+       
       </section>
 
       {/* Features Section */}
