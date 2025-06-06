@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Navigation } from '@/components/Navigation';
-import { ArrowRight, Shield, Brain, BarChart as ChartBar, Clock } from 'lucide-react';
+import { ArrowRight, Shield, Brain, BarChart3 as ChartBar, Clock } from 'lucide-react';
 
 export default function LandingPage() {
   return (
