@@ -91,17 +91,12 @@ export default function LandingPage() {
                 {/* AI Avatar screen content */}
                 <div className="relative w-full h-full bg-gradient-to-b from-[#2563EB]/10 to-[#22D3A5]/10">
                   <Image
-                    src="https://images.pexels.com/photos/8438923/pexels-photo-8438923.jpeg"
-                    alt="AI Assistant"
+                    src="/HeroMockup.png"
+                    alt="AI Food Safety Auditor"
                     width={500}
-                    height={500}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    height={1024}
+                    className="absolute inset-0 w-full h-full object-contain"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white text-center">
-                    <p className="text-sm font-medium">AI Safety Assistant</p>
-                    <p className="text-xs opacity-75">Monitoring active...</p>
-                  </div>
                 </div>
               </div>
               {/* iPhone notch */}
