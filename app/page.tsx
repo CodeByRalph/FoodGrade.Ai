@@ -1,159 +1,146 @@
 'use client';
 import React from 'react';
-
 import { Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
 import Image from 'next/image';
-
-const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
-
 import { Button } from '@/components/ui/button';
 import { Navigation } from '@/components/Navigation';
 import { ArrowRight, Shield, Brain, BarChart3 as ChartBar, Clock } from 'lucide-react';
 
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
+
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#F7FAFC]">
+    <div className="min-h-screen bg-[#F7FAFC] flex flex-col">
       <Navigation />
-      
+
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#F7FAFC] to-white">
-        {/* Modern gradient mesh background */}
-        <div className="absolute inset-0 h-full">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#2563EB]/40 via-[#22D3A5]/30 to-[#2563EB]/20 backdrop-blur-[2px]" />
-          <div className="absolute inset-0 mix-blend-overlay opacity-30 bg-[radial-gradient(circle_at_0%_0%,_transparent_50%,_#22D3A5_100%)]" />
-          <div className="absolute inset-0 mix-blend-overlay opacity-30 bg-[radial-gradient(circle_at_100%_100%,_transparent_50%,_#2563EB_100%)]" />
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#F7FAFC] via-white to-[#E9FAF6] flex items-center min-h-[90vh] py-16">
+        {/* Animated background mesh and floating AI particles */}
+        <div className="absolute inset-0 pointer-events-none z-0">
+          <div className="absolute w-[1200px] h-[800px] left-1/2 top-[-200px] -translate-x-1/2 rounded-full blur-3xl opacity-50 bg-gradient-to-br from-[#2563EB]/30 via-[#22D3A5]/40 to-[#2563EB]/10" />
+          <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-[#2563EB]/40 rounded-full animate-float" />
+          <div className="absolute top-[60%] right-1/3 w-4 h-4 bg-[#22D3A5]/30 rounded-full animate-float-delayed" />
         </div>
 
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none h-full">
-          {/* Animated mesh background */}
-          <div className="absolute inset-0">
-            <div className="absolute w-full h-full bg-[radial-gradient(circle_800px_at_100%_200px,rgba(37,99,235,0.1),transparent)]" />
-            <div className="absolute w-full h-full bg-[radial-gradient(circle_800px_at_0%_300px,rgba(34,211,165,0.1),transparent)]" />
-            <div className="absolute w-full h-full bg-[radial-gradient(circle_600px_at_50%_0%,rgba(37,99,235,0.1),transparent)]" />
-          </div>
-          
-          {/* Floating particles */}
-          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-[#2563EB]/30 rounded-full animate-float" />
-          <div className="absolute top-1/3 right-1/3 w-3 h-3 bg-[#22D3A5]/30 rounded-full animate-float-delayed" />
-          <div className="absolute bottom-1/3 left-1/3 w-2 h-2 bg-[#2563EB]/30 rounded-full animate-float" />
-          <div className="absolute bottom-1/4 right-1/4 w-3 h-3 bg-[#22D3A5]/30 rounded-full animate-float-delayed" />
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left column - Text content */}
-          <div className="text-left lg:pl-12 lg:pr-8 relative z-10">
-            <div className="inline-flex items-center gap-2.5 bg-white/80 backdrop-blur-md border border-[#2563EB]/20 shadow-lg px-5 py-2.5 rounded-full text-[#2563EB] text-sm font-medium mb-10 hover:bg-white transition-colors duration-300">
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 items-center gap-16 max-w-7xl w-full mx-auto px-4 sm:px-8">
+          {/* Left: Text and CTAs */}
+          <div className="text-left">
+            {/* Animated glass badge */}
+            <div className="inline-flex items-center gap-2.5 bg-white/70 border border-[#22D3A5]/20 backdrop-blur-md shadow px-5 py-2 rounded-full text-[#22D3A5] font-medium text-base mb-7 animate-badge-pop">
               <Shield className="w-4 h-4" />
               Next-Generation Food Safety
             </div>
-          
-            <div className="space-y-5 mb-10">
-              <h1 className={`text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 tracking-tight leading-[1.1] ${spaceGrotesk.className}`}>
-                Tomorrow's Food Safety
-              </h1>
-              <p className={`text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-r from-[#2563EB] via-[#3B82F6] to-[#22D3A5] bg-clip-text text-transparent transform hover:-translate-y-1 transition-transform duration-300 ${spaceGrotesk.className}`}>
+
+            <h1 className={`text-5xl sm:text-6xl font-black tracking-tight leading-[1.05] mb-3 ${spaceGrotesk.className}`}>
+              <span className="text-[#2563EB]">Tomorrow’s Food Safety,</span>
+              <br />
+              <span className="bg-gradient-to-r from-[#22D3A5] via-[#38BDF8] to-[#2563EB] bg-clip-text text-transparent drop-shadow-md">
                 Available Today
-              </p>
-            </div>
-          
-            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mb-10 leading-relaxed">
-              Cut compliance costs by 60% while achieving perfect safety scores. Our AI-powered platform catches violations before they become problems.
+              </span>
+            </h1>
+
+            <p className="text-xl sm:text-2xl text-gray-700 max-w-xl mt-7 mb-10 leading-relaxed">
+              Never fail an audit again. Instantly spot and fix risks, get real-time AI guidance, and unlock next-level kitchen performance.
             </p>
-          
-            <div className="flex flex-col sm:flex-row gap-5">
+
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-[#2563EB] to-[#3B82F6] text-white px-8 py-6 rounded-xl flex items-center justify-center gap-3 shadow-xl hover:shadow-2xl text-lg font-medium group transition-all duration-300 hover:scale-105 border border-white/20 backdrop-blur-sm"
+                className="bg-gradient-to-r from-[#2563EB] to-[#22D3A5] text-white px-8 py-5 rounded-2xl font-bold text-lg shadow-xl transition-all hover:scale-105 hover:shadow-2xl focus-visible:ring-4 focus-visible:ring-[#2563EB]/40"
                 asChild
               >
                 <Link href="/audit-home">
                   Start Your First Audit
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-300" />
+                  <ArrowRight className="w-5 h-5 ml-2" />
                 </Link>
               </Button>
-            
               <Button
                 variant="outline"
                 size="lg"
-                className="bg-white/80 backdrop-blur-md border border-[#2563EB]/20 text-[#2563EB] hover:bg-white hover:border-[#2563EB]/40 px-8 py-6 rounded-xl text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300"
+                className="border-[#2563EB]/20 text-[#2563EB] bg-white/80 backdrop-blur-md px-8 py-5 rounded-2xl font-bold text-lg shadow-lg hover:border-[#22D3A5]/50 hover:text-[#22D3A5] transition"
                 asChild
               >
                 <Link href="#features">Learn More</Link>
               </Button>
             </div>
+            {/* Social Proof */}
+            <div className="flex items-center gap-2 mt-2 text-gray-500 text-sm">
+              <span>Trusted by top kitchens</span>
+              <span className="flex -space-x-2">
+                <Image src="/logo1.png" alt="Brand 1" width={32} height={32} className="rounded-full" />
+                <Image src="/logo2.png" alt="Brand 2" width={32} height={32} className="rounded-full" />
+              </span>
+            </div>
           </div>
 
-          {/* Right column - iPhone mockup */}
-          <div className="relative mx-auto w-full max-w-[420px] lg:max-w-[480px]">
-            <div className="relative aspect-[3/4] w-full transform hover:scale-105 transition-transform duration-500">
+          {/* Right: Animated AI Avatar / App Mockup */}
+          <div className="relative flex justify-center lg:justify-end">
+            <div className="relative w-[340px] h-[620px] md:w-[400px] md:h-[720px] flex items-center justify-center">
+              {/* AI Avatar animation, fallback to static if no animation */}
               <Image
-                src="/HeroMockup.png"
+                src="/ai-avatar.gif"
                 alt="AI Food Safety Auditor"
                 fill
+                className="object-cover rounded-3xl border-8 border-white shadow-2xl z-10"
                 priority
-                className="object-cover scale-[1.35] hover:scale-[1.4] transition-transform duration-500"
               />
+              {/* Soft mesh glow */}
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[#2563EB]/10 via-[#22D3A5]/15 to-[#38BDF8]/5 blur-2xl -z-10" />
+              {/* Futuristic HUD Overlay */}
+              <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] h-10 bg-gradient-to-r from-[#22D3A5]/30 to-[#2563EB]/20 blur-md rounded-full opacity-80" />
             </div>
-            <div className="absolute -inset-4 bg-gradient-to-r from-[#2563EB]/10 to-[#22D3A5]/10 rounded-3xl blur-2xl -z-10" />
           </div>
-            
-            {/* Decorative elements */}
-            <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-[#2563EB]/30 to-[#22D3A5]/30 rounded-full blur-2xl" />
-            <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-gradient-to-tr from-[#22D3A5]/30 to-[#2563EB]/30 rounded-full blur-2xl" />
-          </div>
-       
+        </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="features" className="py-24 bg-white relative">
+        {/* Top mesh accent */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-40 bg-gradient-to-r from-[#22D3A5]/10 to-[#2563EB]/10 blur-2xl -z-10" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-8">
           <div className="text-center mb-16">
-            <h2 className={`text-3xl md:text-4xl font-bold text-gray-900 mb-4 ${spaceGrotesk.className}`}>
+            <h2 className={`text-4xl md:text-5xl font-black text-gray-900 mb-3 tracking-tight ${spaceGrotesk.className}`}>
               AI for Food Safety You Can Trust
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Our cutting-edge platform combines artificial intelligence with industry expertise to deliver unparalleled food safety monitoring.
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Our platform combines AI vision, industry expertise, and actionable analytics to deliver real-time food safety like never before.
             </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
             {[
               {
                 icon: Brain,
                 title: "AI-Powered Detection",
-                description: "Real-time monitoring and instant violation detection using advanced computer vision"
+                description: "Instantly spot violations and risks using advanced computer vision—before they become problems."
               },
               {
                 icon: Shield,
                 title: "Compliance Assurance",
-                description: "Stay compliant with food safety regulations through continuous monitoring"
+                description: "Always meet standards. Our AI keeps you audit-ready and stress-free, every shift."
               },
               {
                 icon: ChartBar,
-                title: "Detailed Analytics",
-                description: "Comprehensive reports and insights to improve your safety practices"
+                title: "Growth Analytics",
+                description: "Unlock insights and track improvement with simple, powerful analytics dashboards."
               },
               {
                 icon: Clock,
-                title: "24/7 Monitoring",
-                description: "Round-the-clock surveillance ensures nothing slips through the cracks"
+                title: "24/7 Support",
+                description: "Round-the-clock monitoring and AI guidance—so you’re never alone on your compliance journey."
               }
-            ].map((feature, index) => (
+            ].map((feature, i) => (
               <div
-                key={index}
-                className="bg-white backdrop-blur-lg rounded-2xl p-6 border border-gray-100 hover:border-[#2563EB]/20 transition-all duration-300 hover:transform hover:scale-105 shadow-lg"
+                key={i}
+                className="bg-[#F7FAFC]/90 rounded-2xl p-8 border border-[#E5EAF1] hover:border-[#2563EB]/40 transition-all hover:scale-105 shadow-xl group relative"
               >
-                <div className="w-12 h-12 bg-[#2563EB] rounded-xl flex items-center justify-center mb-4">
-                  <feature.icon className="w-6 h-6 text-white" />
+                <div className="w-14 h-14 bg-gradient-to-br from-[#2563EB] to-[#22D3A5] rounded-xl flex items-center justify-center mb-5 shadow-md group-hover:shadow-lg transition">
+                  <feature.icon className="w-7 h-7 text-white" />
                 </div>
-                <h3 className={`text-xl font-semibold text-gray-900 mb-2 ${spaceGrotesk.className}`}>
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600">
-                  {feature.description}
-                </p>
+                <h3 className={`text-lg font-bold text-gray-900 mb-2 tracking-tight ${spaceGrotesk.className}`}>{feature.title}</h3>
+                <p className="text-gray-600 text-base">{feature.description}</p>
+                {/* Micro-interaction */}
+                <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#22D3A5]/40 opacity-0 group-hover:opacity-100 animate-ping" />
               </div>
             ))}
           </div>
@@ -161,18 +148,18 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 relative bg-[#F7FAFC]">
-        <div className="absolute inset-0 bg-gradient-to-r from-[#2563EB]/10 to-[#22D3A5]/10 rounded-3xl blur-3xl"></div>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
-          <h2 className={`text-3xl md:text-4xl font-bold text-gray-900 mb-6 ${spaceGrotesk.className}`}>
+      <section className="py-24 bg-gradient-to-br from-[#F7FAFC] to-white relative">
+        <div className="absolute inset-0 bg-gradient-to-tr from-[#2563EB]/10 via-white/30 to-[#22D3A5]/10 blur-3xl -z-10"></div>
+        <div className="max-w-3xl mx-auto px-4 sm:px-8 text-center relative">
+          <h2 className={`text-4xl md:text-5xl font-black text-gray-900 mb-6 ${spaceGrotesk.className}`}>
             Ready to Transform Your Food Safety?
           </h2>
-          <p className="text-lg text-gray-600 mb-8">
-            Join the future of food safety monitoring with our AI-powered platform.
+          <p className="text-xl text-gray-600 mb-10">
+            Join the future of compliance with real-time AI monitoring, instant feedback, and growth insights.
           </p>
           <Button
             size="lg"
-            className="bg-[#2563EB] hover:bg-[#2563EB]/90 text-white px-8 py-6 rounded-xl text-lg shadow-lg"
+            className="bg-gradient-to-r from-[#2563EB] to-[#22D3A5] hover:from-[#22D3A5] hover:to-[#2563EB] text-white px-10 py-6 rounded-2xl text-lg font-bold shadow-xl hover:scale-105 transition"
             asChild
           >
             <Link href="/audit-home">Get Started Now</Link>
