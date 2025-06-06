@@ -43,7 +43,7 @@ export default function LandingPage() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8 grid lg:grid-cols-2 gap-8 items-center min-h-[calc(100vh-64px)]">
           {/* Left column - Text content */}
-          <div className="text-left lg:pr-8">
+          <div className="text-left lg:pl-8 lg:pr-8">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 shadow-lg px-4 py-2 rounded-full text-[#2563EB] text-sm mb-8">
             <Shield className="w-4 h-4" />
             Next-Generation Food Safety
