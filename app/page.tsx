@@ -86,18 +86,17 @@ export default function LandingPage() {
           </div>
 
           {/* Right column - iPhone mockup */}
-          <div className="relative mx-auto max-w-[320px] lg:max-w-none">
-              {/* AI Avatar screen content */}
-              <div className="relative w-full h-full bg-gradient-to-b from-[#2563EB]/10 to-[#22D3A5]/10">
-                <Image
-                  src="/HeroMockup.png"
-                  alt="AI Food Safety Auditor"
-                  width={500}
-                  height={1024}
-                  className="absolute inset-0 w-full h-full object-contain"
-                />
-              </div>
+          <div className="relative mx-auto w-full max-w-[420px] lg:max-w-none">
+            <div className="relative aspect-[9/16] w-full">
+              <Image
+                src="/HeroMockup.png"
+                alt="AI Food Safety Auditor"
+                fill
+                priority
+                className="object-contain"
+              />
             </div>
+          </div>
             
             {/* Decorative elements */}
             <div className="absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-[#2563EB]/20 to-[#22D3A5]/20 rounded-full blur-xl" />
