@@ -9,17 +9,17 @@ import { ArrowRight, Shield, Brain, BarChart3 as ChartBar, Clock } from 'lucide-
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#F7FAFC] relative">
-      {/* Modern gradient mesh background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#2563EB]/5 via-transparent to-[#22D3A5]/5" />
-      <div className="absolute inset-0">
-        <div className="absolute w-full h-full bg-[radial-gradient(#2563EB_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.15]" />
-      </div>
-
+    <div className="min-h-screen bg-[#F7FAFC]">
       <Navigation />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden bg-[#F7FAFC]">
+        {/* Modern gradient mesh background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#2563EB]/5 via-transparent to-[#22D3A5]/5" />
+        <div className="absolute inset-0">
+          <div className="absolute w-full h-full bg-[radial-gradient(#2563EB_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.15]" />
+        </div>
+
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-20 -right-20 w-40 h-40 md:w-80 md:h-80 md:-top-40 md:-right-40 bg-[#22D3A5]/10 rounded-full blur-3xl animate-pulse"></div>
@@ -67,13 +67,13 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20">
+      <section id="features" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className={`text-3xl md:text-4xl font-bold text-gray-900 mb-4 ${spaceGrotesk.className}`}>
               AI for Food Safety You Can Trust
             </h2>
-            <p className="text-lg text-white/60 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Our cutting-edge platform combines artificial intelligence with industry expertise to deliver unparalleled food safety monitoring.
             </p>
           </div>
@@ -111,7 +111,7 @@ export default function LandingPage() {
                 <h3 className={`text-xl font-semibold text-gray-900 mb-2 ${spaceGrotesk.className}`}>
                   {feature.title}
                 </h3>
-                <p className="text-white/60">
+                <p className="text-gray-600">
                   {feature.description}
                 </p>
               </div>
@@ -121,7 +121,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 relative">
+      <section className="py-20 relative bg-[#F7FAFC]">
         <div className="absolute inset-0 bg-gradient-to-r from-[#2563EB]/10 to-[#22D3A5]/10 rounded-3xl blur-3xl"></div>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
           <h2 className={`text-3xl md:text-4xl font-bold text-gray-900 mb-6 ${spaceGrotesk.className}`}>
