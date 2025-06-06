@@ -19,14 +19,14 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-[#F7FAFC]">
         {/* Modern gradient mesh background */}
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 h-full">
           <div className="absolute inset-0 bg-gradient-to-br from-[#2563EB]/30 via-[#22D3A5]/20 to-[#2563EB]/10" />
           <div className="absolute inset-0 mix-blend-overlay opacity-20 bg-[radial-gradient(circle_at_0%_0%,_transparent_50%,_#22D3A5_100%)]" />
           <div className="absolute inset-0 mix-blend-overlay opacity-20 bg-[radial-gradient(circle_at_100%_100%,_transparent_50%,_#2563EB_100%)]" />
         </div>
 
         {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none h-full">
           {/* Animated mesh background */}
           <div className="absolute inset-0">
             <div className="absolute w-full h-full bg-[radial-gradient(circle_800px_at_100%_200px,rgba(37,99,235,0.1),transparent)]" />
@@ -41,7 +41,7 @@ export default function LandingPage() {
           <div className="absolute bottom-1/4 right-1/4 w-3 h-3 bg-[#22D3A5]/30 rounded-full animate-float-delayed" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 grid lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8 grid lg:grid-cols-2 gap-8 items-center min-h-[calc(100vh-64px)]">
           {/* Left column - Text content */}
           <div className="text-left lg:pr-8">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 shadow-lg px-4 py-2 rounded-full text-[#2563EB] text-sm mb-8">
@@ -86,8 +86,8 @@ export default function LandingPage() {
           </div>
 
           {/* Right column - iPhone mockup */}
-          <div className="relative mx-auto w-full max-w-[420px] lg:max-w-none">
-            <div className="relative aspect-[9/16] w-full">
+          <div className="relative mx-auto w-full max-w-[380px] lg:max-w-none">
+            <div className="relative aspect-[9/16] w-full max-h-[70vh]">
               <Image
                 src="/HeroMockup.png"
                 alt="AI Food Safety Auditor"
