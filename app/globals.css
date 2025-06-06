@@ -80,3 +80,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer base {
+  animation: {
+    'accordion-down': 'accordion-down 0.2s ease-out',
+    'accordion-up': 'accordion-up 0.2s ease-out',
+    'fade-in': 'fade-in 0.3s ease-out',
+    'float': 'float 6s ease-in-out infinite',
+    'float-delayed': 'float 6s ease-in-out infinite 3s',
+  },
+  keyframes: {
+    'float': {
+      '0%, 100%': { transform: 'translateY(0) rotate(var(--tw-rotate))' },
+      '50%': { transform: 'translateY(-20px) rotate(var(--tw-rotate))' },
+    },
+  },
+}
