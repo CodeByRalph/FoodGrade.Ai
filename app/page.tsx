@@ -15,15 +15,23 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-[#F7FAFC]">
         {/* Modern gradient mesh background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#2563EB]/5 via-transparent to-[#22D3A5]/5" />
         <div className="absolute inset-0">
-          <div className="absolute w-full h-full bg-[radial-gradient(#2563EB_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.15]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#2563EB]/40 via-[#22D3A5]/20 to-[#2563EB]/10" />
+          <div className="absolute inset-0 mix-blend-overlay opacity-30 bg-[radial-gradient(circle_at_0%_0%,_transparent_50%,_#22D3A5_100%)]" />
+          <div className="absolute inset-0 mix-blend-overlay opacity-30 bg-[radial-gradient(circle_at_100%_100%,_transparent_50%,_#2563EB_100%)]" />
         </div>
 
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-20 -right-20 w-40 h-40 md:w-80 md:h-80 md:-top-40 md:-right-40 bg-[#22D3A5]/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute -bottom-20 -left-20 w-40 h-40 md:w-80 md:h-80 md:-bottom-40 md:-left-40 bg-[#2563EB]/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          {/* Abstract AI circuit pattern */}
+          <div className="absolute top-1/4 right-[10%] w-64 h-64 border-2 border-[#2563EB]/20 rounded-full" />
+          <div className="absolute top-1/4 right-[10%] w-64 h-64 border border-[#22D3A5]/20 rounded-full animate-pulse" style={{ animationDuration: '3s' }} />
+          <div className="absolute bottom-1/4 left-[10%] w-48 h-48 border-2 border-[#22D3A5]/20 rounded-full" />
+          <div className="absolute bottom-1/4 left-[10%] w-48 h-48 border border-[#2563EB]/20 rounded-full animate-pulse" style={{ animationDuration: '4s' }} />
+          
+          {/* Floating elements */}
+          <div className="absolute top-1/3 left-1/4 w-24 h-24 bg-gradient-to-br from-[#2563EB]/20 to-[#22D3A5]/20 rounded-lg rotate-12 animate-float" />
+          <div className="absolute bottom-1/3 right-1/4 w-32 h-32 bg-gradient-to-bl from-[#22D3A5]/20 to-[#2563EB]/20 rounded-lg -rotate-12 animate-float-delayed" />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center">
