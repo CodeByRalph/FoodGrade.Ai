@@ -79,8 +79,3 @@
   body {
     @apply bg-background text-foreground;
   }
-      '0%, 100%': { transform: 'translateY(0) rotate(var(--tw-rotate))' },
-      '50%': { transform: 'translateY(-20px) rotate(var(--tw-rotate))' },
-    },
-  },
-}
