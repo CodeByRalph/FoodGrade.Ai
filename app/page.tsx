@@ -1,4 +1,8 @@
+import { Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
+
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
+
 import { Button } from '@/components/ui/button';
 import { Navigation } from '@/components/Navigation';
 import { ArrowRight, Shield, Brain, BarChart3 as ChartBar, Clock } from 'lucide-react';
