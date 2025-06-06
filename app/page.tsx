@@ -17,12 +17,12 @@ export default function LandingPage() {
       <Navigation />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-[#F7FAFC]">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#F7FAFC] to-white">
         {/* Modern gradient mesh background */}
         <div className="absolute inset-0 h-full">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#2563EB]/30 via-[#22D3A5]/20 to-[#2563EB]/10" />
-          <div className="absolute inset-0 mix-blend-overlay opacity-20 bg-[radial-gradient(circle_at_0%_0%,_transparent_50%,_#22D3A5_100%)]" />
-          <div className="absolute inset-0 mix-blend-overlay opacity-20 bg-[radial-gradient(circle_at_100%_100%,_transparent_50%,_#2563EB_100%)]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#2563EB]/40 via-[#22D3A5]/30 to-[#2563EB]/20 backdrop-blur-[2px]" />
+          <div className="absolute inset-0 mix-blend-overlay opacity-30 bg-[radial-gradient(circle_at_0%_0%,_transparent_50%,_#22D3A5_100%)]" />
+          <div className="absolute inset-0 mix-blend-overlay opacity-30 bg-[radial-gradient(circle_at_100%_100%,_transparent_50%,_#2563EB_100%)]" />
         </div>
 
         {/* Animated background elements */}
@@ -41,43 +41,43 @@ export default function LandingPage() {
           <div className="absolute bottom-1/4 right-1/4 w-3 h-3 bg-[#22D3A5]/30 rounded-full animate-float-delayed" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8 grid lg:grid-cols-2 gap-8 items-center min-h-[calc(100vh-64px)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid lg:grid-cols-2 gap-12 items-center">
           {/* Left column - Text content */}
-          <div className="text-left lg:pl-8 lg:pr-8">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 shadow-lg px-4 py-2 rounded-full text-[#2563EB] text-sm mb-8">
-            <Shield className="w-4 h-4" />
-            Next-Generation Food Safety
+          <div className="text-left lg:pl-12 lg:pr-8 relative z-10">
+            <div className="inline-flex items-center gap-2.5 bg-white/80 backdrop-blur-md border border-[#2563EB]/20 shadow-lg px-5 py-2.5 rounded-full text-[#2563EB] text-sm font-medium mb-10 hover:bg-white transition-colors duration-300">
+              <Shield className="w-4 h-4" />
+              Next-Generation Food Safety
             </div>
           
-            <div className="space-y-4 mb-8">
-              <h1 className={`text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 ${spaceGrotesk.className}`}>
+            <div className="space-y-5 mb-10">
+              <h1 className={`text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 tracking-tight leading-[1.1] ${spaceGrotesk.className}`}>
                 Tomorrow's Food Safety
               </h1>
-              <p className={`text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-r from-[#2563EB] to-[#22D3A5] bg-clip-text text-transparent transform hover:-translate-y-1 transition-transform duration-300 ${spaceGrotesk.className}`}>
+              <p className={`text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-r from-[#2563EB] via-[#3B82F6] to-[#22D3A5] bg-clip-text text-transparent transform hover:-translate-y-1 transition-transform duration-300 ${spaceGrotesk.className}`}>
                 Available Today
               </p>
             </div>
           
-            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mb-8">
+            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mb-10 leading-relaxed">
               Cut compliance costs by 60% while achieving perfect safety scores. Our AI-powered platform catches violations before they become problems.
             </p>
           
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-5">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-[#2563EB] to-[#2563EB]/90 text-white px-8 py-6 rounded-xl flex items-center justify-center gap-2 shadow-lg hover:shadow-xl text-lg group transition-all duration-300 hover:scale-105 border border-white/20 backdrop-blur-sm"
+                className="bg-gradient-to-r from-[#2563EB] to-[#3B82F6] text-white px-8 py-6 rounded-xl flex items-center justify-center gap-3 shadow-xl hover:shadow-2xl text-lg font-medium group transition-all duration-300 hover:scale-105 border border-white/20 backdrop-blur-sm"
                 asChild
               >
                 <Link href="/audit-home">
                   Start Your First Audit
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-300" />
                 </Link>
               </Button>
             
               <Button
                 variant="outline"
                 size="lg"
-                className="bg-white/10 backdrop-blur-md border border-white/20 text-[#2563EB] hover:bg-[#2563EB]/5 px-8 py-6 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                className="bg-white/80 backdrop-blur-md border border-[#2563EB]/20 text-[#2563EB] hover:bg-white hover:border-[#2563EB]/40 px-8 py-6 rounded-xl text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300"
                 asChild
               >
                 <Link href="#features">Learn More</Link>
@@ -86,21 +86,22 @@ export default function LandingPage() {
           </div>
 
           {/* Right column - iPhone mockup */}
-          <div className="relative mx-auto w-full max-w-[380px] lg:max-w-[420px]">
-            <div className="relative aspect-[3/4] w-full">
+          <div className="relative mx-auto w-full max-w-[420px] lg:max-w-[480px]">
+            <div className="relative aspect-[3/4] w-full transform hover:scale-105 transition-transform duration-500">
               <Image
                 src="/HeroMockup.png"
                 alt="AI Food Safety Auditor"
                 fill
                 priority
-                className="object-cover scale-125 hover:scale-120 transition-transform duration-300"
+                className="object-cover scale-[1.35] hover:scale-[1.4] transition-transform duration-500"
               />
             </div>
+            <div className="absolute -inset-4 bg-gradient-to-r from-[#2563EB]/10 to-[#22D3A5]/10 rounded-3xl blur-2xl -z-10" />
           </div>
             
             {/* Decorative elements */}
-            <div className="absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-[#2563EB]/20 to-[#22D3A5]/20 rounded-full blur-xl" />
-            <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-tr from-[#22D3A5]/20 to-[#2563EB]/20 rounded-full blur-xl" />
+            <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-[#2563EB]/30 to-[#22D3A5]/30 rounded-full blur-2xl" />
+            <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-gradient-to-tr from-[#22D3A5]/30 to-[#2563EB]/30 rounded-full blur-2xl" />
           </div>
        
       </section>
