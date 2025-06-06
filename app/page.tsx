@@ -86,14 +86,14 @@ export default function LandingPage() {
           </div>
 
           {/* Right column - iPhone mockup */}
-          <div className="relative mx-auto w-full max-w-[380px] lg:max-w-none">
-            <div className="relative aspect-[9/16] w-full max-h-[70vh]">
+          <div className="relative mx-auto w-full max-w-[420px] lg:max-w-[520px] xl:max-w-[580px]">
+            <div className="relative aspect-[9/16] w-full">
               <Image
                 src="/HeroMockup.png"
                 alt="AI Food Safety Auditor"
                 fill
                 priority
-                className="object-contain"
+                className="object-contain scale-110 hover:scale-105 transition-transform duration-300"
               />
             </div>
           </div>
