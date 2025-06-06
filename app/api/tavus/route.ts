@@ -1,9 +1,8 @@
-
 export async function POST(req: Request) {
   // Add CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'POST, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Content-Type': 'application/json'
   };
@@ -19,7 +18,7 @@ export async function POST(req: Request) {
     const tavusResponse = await fetch('https://tavusapi.com/v2/conversations', {
       method: 'POST',
       headers: {
-        'x-api-key': process.env.TAVUS_API_KEY as string,
+        'X-API-KEY': process.env.TAVUS_API_KEY!,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -57,9 +56,11 @@ export async function POST(req: Request) {
       });
     }
 
-    // Return the URL in the expected format
-    const response = data.conversation_url
-    return new Response(JSON.stringify({ conversation_url: response }), {
+    // Return the URL and conversation ID
+    return new Response(JSON.stringify({ 
+      conversation_url: data.conversation_url,
+      conversation_id: data.conversation_id 
+    }), {
       status: 200,
       headers,
     });
@@ -70,4 +71,70 @@ export async function POST(req: Request) {
       headers,
     });
   }
+}
+
+export async function DELETE(req: Request) {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Content-Type': 'application/json',
+  };
+
+  try {
+    console.log('[Tavus API] DELETE request received');
+    
+    const body = await req.json();
+    const { conversation_id } = body;
+
+    if (!conversation_id) {
+      return new Response(JSON.stringify({ error: 'conversation_id is required' }), {
+        status: 400,
+        headers,
+      });
+    }
+
+    // End the conversation on Tavus
+    const tavusResponse = await fetch(`https://tavusapi.com/v2/conversations/${conversation_id}/end`, {
+      method: 'POST',
+      headers: {
+        'X-API-KEY': process.env.TAVUS_API_KEY!,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('[Tavus API] End conversation response status:', tavusResponse.status);
+
+    if (!tavusResponse.ok) {
+      const errorText = await tavusResponse.text();
+      console.error('[Tavus API] Error ending conversation:', errorText);
+      return new Response(JSON.stringify({ error: 'Failed to end conversation on Tavus' }), {
+        status: tavusResponse.status,
+        headers,
+      });
+    }
+
+    console.log('[Tavus API] Conversation ended successfully');
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers,
+    });
+  } catch (error) {
+    console.error('[Tavus API] Error ending conversation:', error);
+    return new Response(JSON.stringify({ error: 'Failed to end Tavus conversation' }), {
+      status: 500,
+      headers,
+    });
+  }
+}
+
+export async function OPTIONS(req: Request) {
+  return new Response(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }
