@@ -81,9 +81,11 @@ const config: Config = {
         'float': {
           '0%, 100%': {
             transform: 'translateY(0) rotate(var(--tw-rotate))',
+            opacity: '0.6'
           },
           '50%': {
             transform: 'translateY(-20px) rotate(var(--tw-rotate))',
+            opacity: '1'
           },
         },
         'fade-in': {
@@ -95,7 +97,7 @@ const config: Config = {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'float': 'float 6s ease-in-out infinite',
-        'float-delayed': 'float 6s ease-in-out infinite 3s',
+        'float-delayed': 'float 8s ease-in-out infinite 2s',
         'fade-in': 'fade-in 0.3s ease-out',
       },
     },
