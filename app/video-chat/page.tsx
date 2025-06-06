@@ -127,8 +127,8 @@ const MeetingRoom = () => {
         }
         
         console.log('[VideoChat] Real-time coaching:', coachingMessage);
-      }
-    } catch (error) {
+                }
+              } catch (error) {
       console.error('[VideoChat] Error handling perception event:', error);
     }
   };
@@ -284,7 +284,7 @@ const MeetingRoom = () => {
   };
 
   if (!isCallActive) {
-    return (
+  return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="w-24 h-24 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -338,9 +338,9 @@ const MeetingRoom = () => {
                 <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
 
       {/* Picture-in-Picture local video */}
       <div className="absolute top-6 right-6 w-20 h-28 bg-gray-800 rounded-xl overflow-hidden shadow-xl border-2 border-white/20">
@@ -362,7 +362,7 @@ const MeetingRoom = () => {
         <button className="absolute top-1 right-1 w-4 h-4 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center">
           <Minimize2 className="w-2 h-2 text-white" />
         </button>
-      </div>
+        </div>
 
       {/* Control buttons */}
       <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2">
@@ -384,7 +384,7 @@ const MeetingRoom = () => {
           </button>
 
           {/* End call button */}
-          <button
+          <button 
             onClick={endCall}
             className="w-12 h-12 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-all duration-200 shadow-xl shadow-red-500/30 hover:scale-105"
           >
