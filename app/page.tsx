@@ -86,7 +86,7 @@ export default function LandingPage() {
           </div>
 
           {/* Right column - iPhone mockup */}
-          <div className="relative mb-16 mx-auto w-full max-w-[380px] lg:max-w-[420px]">
+          <div className="relative mb-24 mx-auto w-full max-w-[380px] lg:max-w-[420px]">
             <div className="relative aspect-[3/4] w-full">
               <Image
                 src="/HeroMockup.png"
