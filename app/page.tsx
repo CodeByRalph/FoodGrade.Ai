@@ -79,7 +79,7 @@ export default function LandingPage() {
             <div className="relative w-[340px] h-[620px] md:w-[400px] md:h-[720px] flex items-center justify-center">
               {/* AI Avatar animation, fallback to static if no animation */}
               <Image
-                src="/HeroMockup.png"
+                src="/AuditChat.png"
                 alt="AI Food Safety Auditor"
                 fill
                 className="object-cover rounded-3xl border-8 border-white shadow-2xl z-10"
