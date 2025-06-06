@@ -84,24 +84,15 @@ export default function LandingPage() {
 
           {/* Right column - iPhone mockup */}
           <div className="relative mx-auto max-w-[320px] lg:max-w-none">
-            <div className="relative w-[280px] h-[572px] mx-auto">
-              {/* iPhone frame */}
-              <div className="absolute inset-0 bg-black rounded-[3rem] shadow-2xl" />
-              <div className="absolute inset-2 bg-white rounded-[2.75rem] overflow-hidden">
-                {/* AI Avatar screen content */}
-                <div className="relative w-full h-full bg-gradient-to-b from-[#2563EB]/10 to-[#22D3A5]/10">
-                  <Image
-                    src="/HeroMockup.png"
-                    alt="AI Food Safety Auditor"
-                    width={500}
-                    height={1024}
-                    className="absolute inset-0 w-full h-full object-contain"
-                  />
-                </div>
-              </div>
-              {/* iPhone notch */}
-              <div className="absolute top-0 inset-x-0 h-6 bg-black">
-                <div className="absolute top-1 left-1/2 -translate-x-1/2 w-20 h-4 bg-black rounded-full" />
+              {/* AI Avatar screen content */}
+              <div className="relative w-full h-full bg-gradient-to-b from-[#2563EB]/10 to-[#22D3A5]/10">
+                <Image
+                  src="/HeroMockup.png"
+                  alt="AI Food Safety Auditor"
+                  width={500}
+                  height={1024}
+                  className="absolute inset-0 w-full h-full object-contain"
+                />
               </div>
             </div>
             
