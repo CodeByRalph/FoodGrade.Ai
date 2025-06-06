@@ -7,13 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Navigation } from '@/components/Navigation';
 import { ArrowRight, Shield, Brain, BarChart3 as ChartBar, Clock } from 'lucide-react';
 
-const hexGridPattern = {
-  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M54.627 0l.83.828-1.415 1.415L51.8 0h2.827zM5.373 0l-.83.828L5.96 2.243 8.2 0H5.374zM48.97 0l3.657 3.657-1.414 1.414L46.143 0h2.828zM11.03 0L7.372 3.657 8.787 5.07 13.857 0H11.03zm32.284 0L49.8 6.485 48.384 7.9l-7.9-7.9h2.83zM16.686 0L10.2 6.485 11.616 7.9l7.9-7.9h-2.83zM22.344 0L13.858 8.485 15.272 9.9l7.9-7.9h-.828zm13.312 0l8.485 8.485-1.414 1.414-7.9-7.9h.828zm-9.9 0l7.9 7.9-1.415 1.415-7.9-7.9h1.414zm6.485 0l7.9 7.9-1.414 1.415-7.9-7.9h1.414zM20.93 0l7.9 7.9-1.414 1.415-7.9-7.9h1.414zM32.34 0l7.9 7.9-1.414 1.415-7.9-7.9h1.414zm-6.485 0l7.9 7.9-1.414 1.415-7.9-7.9h1.414zM28.93 0l7.9 7.9-1.414 1.415-7.9-7.9h1.414zm-9.9 0l7.9 7.9-1.414 1.415-7.9-7.9h1.414zm6.485 0l7.9 7.9-1.414 1.415-7.9-7.9h1.414z' fill='%232563EB' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E")`,
-};
-
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#F7FAFC]" style={hexGridPattern}>
+    <div className="min-h-screen bg-[#F7FAFC] relative">
+      {/* Modern gradient mesh background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#2563EB]/5 via-transparent to-[#22D3A5]/5" />
+      <div className="absolute inset-0">
+        <div className="absolute w-full h-full bg-[radial-gradient(#2563EB_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.15]" />
+      </div>
+
       <Navigation />
       
       {/* Hero Section */}
