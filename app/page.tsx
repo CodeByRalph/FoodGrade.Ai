@@ -43,7 +43,7 @@ export default function LandingPage() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8 grid lg:grid-cols-2 gap-8 items-center min-h-[calc(100vh-64px)]">
           {/* Left column - Text content */}
-          <div className="text-left lg:pr-8">
+          <div className="text-left lg:pr-8 lg:pt-0 pt-12">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 shadow-lg px-4 py-2 rounded-full text-[#2563EB] text-sm mb-8">
             <Shield className="w-4 h-4" />
             Next-Generation Food Safety
@@ -86,14 +86,14 @@ export default function LandingPage() {
           </div>
 
           {/* Right column - iPhone mockup */}
-          <div className="relative mx-auto w-full max-w-[380px] lg:max-w-[420px]">
-            <div className="relative aspect-[3/4] w-full">
+          <div className="relative mx-auto w-full max-w-[380px] lg:max-w-[420px] -mb-24 lg:mb-0">
+            <div className="relative aspect-[3/4] w-full translate-y-12 lg:translate-y-0">
               <Image
                 src="/HeroMockup.png"
                 alt="AI Food Safety Auditor"
                 fill
                 priority
-                className="object-cover scale-125 hover:scale-120 transition-transform duration-300"
+                className="object-cover scale-[1.4] hover:scale-[1.45] transition-transform duration-300"
               />
             </div>
           </div>
