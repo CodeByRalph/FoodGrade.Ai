@@ -1,3 +1,5 @@
+'use client';
+
 import { Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
 import Image from 'next/image';
