@@ -51,275 +51,6 @@ interface CoachingMessage {
   severity: 'high' | 'medium' | 'low';
 }
 
-interface CameraDevice {
-  deviceId: string;
-  label: string;
-  facingMode?: string;
-}
-
-// Enhanced Camera Manager Class with Daily.co Integration
-class CameraManager {
-  private currentStream: MediaStream | null = null;
-  private availableCameras: CameraDevice[] = [];
-  private currentCameraIndex = 0;
-  private videoElement: HTMLVideoElement | null = null;
-  private dailyCall: any = null;
-  private isInitialized = false;
-  private isUpdatingCamera = false;
-
-  async initialize(videoElement: HTMLVideoElement, dailyCall?: any) {
-    this.videoElement = videoElement;
-    this.dailyCall = dailyCall;
-    
-    // Request permissions first
-    await this.requestPermissions();
-    await this.enumerateDevices();
-    
-    // Start with front camera (index 0 is usually front)
-    const frontCameraIndex = this.findFrontCameraIndex();
-    await this.startCamera(frontCameraIndex);
-    this.isInitialized = true;
-  }
-
-  private findFrontCameraIndex(): number {
-    // Try to find front camera first
-    const frontIndex = this.availableCameras.findIndex(camera => 
-      camera.facingMode === 'user' || 
-      camera.label.toLowerCase().includes('front') ||
-      camera.label.toLowerCase().includes('facetime') ||
-      camera.label.toLowerCase().includes('user')
-    );
-    return frontIndex >= 0 ? frontIndex : 0;
-  }
-
-  async requestPermissions() {
-    try {
-      // Request both video and audio permissions
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      stream.getTracks().forEach(track => track.stop());
-      console.log('[CameraManager] Permissions granted');
-    } catch (error) {
-      console.error('[CameraManager] Permission denied:', error);
-      throw error;
-    }
-  }
-
-  async enumerateDevices() {
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      this.availableCameras = devices
-        .filter(device => device.kind === 'videoinput' && device.deviceId)
-        .map(device => ({
-          deviceId: device.deviceId,
-          label: device.label || `Camera ${device.deviceId.slice(0, 8)}`,
-          facingMode: this.guessFacingMode(device.label)
-        }));
-      
-      console.log('[CameraManager] Available cameras:', this.availableCameras);
-    } catch (error) {
-      console.error('[CameraManager] Error enumerating devices:', error);
-    }
-  }
-
-  private guessFacingMode(label: string): string {
-    const lowerLabel = label.toLowerCase();
-    if (lowerLabel.includes('front') || lowerLabel.includes('user') || lowerLabel.includes('facetime')) return 'user';
-    if (lowerLabel.includes('back') || lowerLabel.includes('rear') || lowerLabel.includes('environment')) return 'environment';
-    return 'unknown';
-  }
-
-  async startCamera(cameraIndex: number) {
-    try {
-      const camera = this.availableCameras[cameraIndex];
-      if (!camera) {
-        console.error('[CameraManager] Camera not found at index:', cameraIndex);
-        return false;
-      }
-
-      console.log('[CameraManager] Starting camera:', camera.label, camera.deviceId);
-
-      const constraints: MediaStreamConstraints = {
-        video: {
-          deviceId: { exact: camera.deviceId },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30 }
-        },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      };
-
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
-      // Stop previous stream
-      if (this.currentStream) {
-        this.currentStream.getTracks().forEach(track => track.stop());
-      }
-
-      this.currentStream = stream;
-      this.currentCameraIndex = cameraIndex;
-
-      // Update PiP video element
-      if (this.videoElement) {
-        try {
-          this.videoElement.srcObject = stream;
-          // Wait for the video to be ready before playing
-          await new Promise((resolve, reject) => {
-            this.videoElement!.onloadedmetadata = () => resolve(void 0);
-            this.videoElement!.onerror = reject;
-            // Timeout after 5 seconds
-            setTimeout(() => reject(new Error('Video load timeout')), 5000);
-          });
-          await this.videoElement.play();
-          console.log('[CameraManager] Video element updated successfully');
-        } catch (videoError) {
-          console.error('[CameraManager] Error updating video element:', videoError);
-          // Continue anyway, the stream might still work for Daily.co
-        }
-      }
-
-      // CRITICAL: Update Daily.co with new camera stream for Tavus AI
-      if (this.dailyCall && this.isInitialized) {
-        await this.updateDailyCameraStream(stream, camera.deviceId);
-      }
-
-      console.log('[CameraManager] Camera started successfully');
-      return true;
-    } catch (error) {
-      console.error('[CameraManager] Error starting camera:', error);
-      return false;
-    }
-  }
-
-  private async updateDailyCameraStream(stream: MediaStream, deviceId: string) {
-    if (this.isUpdatingCamera) {
-      console.log('[CameraManager] Camera update already in progress, skipping...');
-      return;
-    }
-
-    this.isUpdatingCamera = true;
-    
-    try {
-      console.log('[CameraManager] Updating Daily.co camera stream for Tavus AI:', deviceId);
-      
-      // Method 1: Stop video completely, then restart with new device
-      await this.dailyCall.setLocalVideo(false);
-      console.log('[CameraManager] Video stopped');
-      
-      // Wait for video to fully stop
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Update input settings with exact device ID
-      await this.dailyCall.updateInputSettings({
-        video: {
-          deviceId: { exact: deviceId },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30 }
-        }
-      });
-      console.log('[CameraManager] Input settings updated');
-      
-      // Wait for settings to apply
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Restart video with new camera
-      await this.dailyCall.setLocalVideo(true);
-      console.log('[CameraManager] Video restarted with new camera');
-      
-      // Additional method: Force track replacement
-      const videoTrack = stream.getVideoTracks()[0];
-      if (videoTrack) {
-        try {
-          // Try to replace the track directly
-          await this.dailyCall.updateInputSettings({
-            video: {
-              track: videoTrack
-            }
-          });
-          console.log('[CameraManager] Video track replaced directly');
-        } catch (trackError) {
-          console.log('[CameraManager] Direct track replacement not supported, using device ID method');
-        }
-      }
-      
-      // Verify the camera change took effect
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Force a refresh of the video stream
-      await this.dailyCall.setLocalVideo(false);
-      await new Promise(resolve => setTimeout(resolve, 100));
-      await this.dailyCall.setLocalVideo(true);
-      
-      console.log('[CameraManager] Daily.co camera stream updated successfully for Tavus AI');
-    } catch (error) {
-      console.error('[CameraManager] Error updating Daily.co camera stream:', error);
-    } finally {
-      this.isUpdatingCamera = false;
-    }
-  }
-
-  async flipCamera() {
-    if (this.availableCameras.length < 2) {
-      console.log('[CameraManager] Only one camera available, cannot flip');
-      return false;
-    }
-
-    if (this.isUpdatingCamera) {
-      console.log('[CameraManager] Camera update in progress, please wait...');
-      return false;
-    }
-
-    const nextIndex = (this.currentCameraIndex + 1) % this.availableCameras.length;
-    console.log('[CameraManager] Flipping from camera', this.currentCameraIndex, 'to', nextIndex);
-    
-    const success = await this.startCamera(nextIndex);
-    
-    if (success) {
-      // Additional verification step - ensure Tavus AI gets the new feed
-      setTimeout(async () => {
-        if (this.dailyCall && this.currentStream) {
-          console.log('[CameraManager] Performing additional stream verification for Tavus AI...');
-          
-          // Force another update to ensure Tavus AI receives the new camera feed
-          const currentCamera = this.availableCameras[this.currentCameraIndex];
-          await this.updateDailyCameraStream(this.currentStream, currentCamera.deviceId);
-        }
-      }, 2000);
-    }
-    
-    return success;
-  }
-
-  setDailyCall(dailyCall: any) {
-    this.dailyCall = dailyCall;
-  }
-
-  getCurrentCamera(): CameraDevice | null {
-    return this.availableCameras[this.currentCameraIndex] || null;
-  }
-
-  getCurrentStream(): MediaStream | null {
-    return this.currentStream;
-  }
-
-  getAvailableCameras(): CameraDevice[] {
-    return this.availableCameras;
-  }
-
-  destroy() {
-    if (this.currentStream) {
-      this.currentStream.getTracks().forEach(track => track.stop());
-      this.currentStream = null;
-    }
-    this.isInitialized = false;
-    this.isUpdatingCamera = false;
-  }
-}
-
 const getOrCreateCallObject = () => {
   // Use a property on window to store the singleton
   if (!window._dailyCallObject) {
@@ -330,43 +61,16 @@ const getOrCreateCallObject = () => {
 
 const MeetingRoom = () => {
   const callRef = useRef<any>(null);
-  const cameraManagerRef = useRef<CameraManager | null>(null);
-  const localVideoRef = useRef<HTMLVideoElement>(null);
   const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipants>({});
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isCallActive, setIsCallActive] = useState(true);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [auditScore, setAuditScore] = useState(100);
   const [coachingMessages, setCoachingMessages] = useState<CoachingMessage[]>([]);
-  const [currentCamera, setCurrentCamera] = useState<CameraDevice | null>(null);
-  const [isFlipping, setIsFlipping] = useState(false);
-  const [isCallJoined, setIsCallJoined] = useState(false);
+  const [currentFacingMode, setCurrentFacingMode] = useState<'user' | 'environment'>('user');
   const router = useRouter();
-
-  // Enhanced camera flip function
-  const flipCamera = async () => {
-    if (!cameraManagerRef.current || isFlipping || !isCallJoined) return;
-
-    setIsFlipping(true);
-    try {
-      console.log('[VideoChat] Starting camera flip for Tavus AI integration...');
-      const success = await cameraManagerRef.current.flipCamera();
-      if (success) {
-        const newCamera = cameraManagerRef.current.getCurrentCamera();
-        setCurrentCamera(newCamera);
-        console.log('[VideoChat] Camera flipped successfully to:', newCamera?.label);
-        console.log('[VideoChat] Tavus AI should now receive feed from:', newCamera?.facingMode);
-      } else {
-        console.error('[VideoChat] Camera flip failed');
-      }
-    } catch (error) {
-      console.error('[VideoChat] Error flipping camera:', error);
-    } finally {
-      // Longer delay to ensure camera switching completes
-      setTimeout(() => setIsFlipping(false), 2000);
-    }
-  };
 
   // Handle perception tool call events
   const handlePerceptionEvent = async (event: PerceptionEvent) => {
@@ -424,9 +128,73 @@ const MeetingRoom = () => {
         }
         
         console.log('[VideoChat] Real-time coaching:', coachingMessage);
+                }
+              } catch (error) {
+      console.error('[VideoChat] Error handling perception event:', error);
+    }
+  };
+
+  const flipCamera = async () => {
+    try {
+      const call = callRef.current;
+      if (!call) return;
+
+      // Stop current video track
+      await call.setLocalVideo(false);
+      
+      // Stop the current local stream
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+      }
+
+      // Get new stream with opposite facing mode
+      const newFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+      
+      try {
+        const newStream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: newFacingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: true
+        });
+        
+        setLocalStream(newStream);
+        setCurrentFacingMode(newFacingMode);
+        
+        // Update the call with new video track
+        const videoTrack = newStream.getVideoTracks()[0];
+        if (videoTrack) {
+          await call.updateInputSettings({
+            video: {
+              processor: {
+                type: 'none'
+              }
+            }
+          });
+          
+          // Replace the video track
+          await call.setLocalVideo(true);
+        }
+        
+        console.log('[VideoChat] Camera flipped to:', newFacingMode);
+      } catch (error) {
+        console.error('[VideoChat] Error flipping camera:', error);
+        // Fallback: try to get any available camera
+        try {
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+          });
+          setLocalStream(fallbackStream);
+          await call.setLocalVideo(true);
+        } catch (fallbackError) {
+          console.error('[VideoChat] Fallback camera access failed:', fallbackError);
+        }
       }
     } catch (error) {
-      console.error('[VideoChat] Error handling perception event:', error);
+      console.error('[VideoChat] Error in flipCamera:', error);
     }
   };
 
@@ -446,10 +214,27 @@ const MeetingRoom = () => {
     const join_meeting = async () => {
       const conversation_url = await get_conversation_url();
       console.log('[VideoChat] Conversation URL:', conversation_url);
-      
       // Only create or get one call object per page
       const call = getOrCreateCallObject();
       callRef.current = call;
+
+      // Join meeting
+      call.join({ url: conversation_url});
+
+      // Get local stream for PiP view
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: currentFacingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }, 
+          audio: true 
+        });
+        setLocalStream(stream);
+      } catch (error) {
+        console.error('Error getting local stream:', error);
+      }
 
       // Handle remote participants
       const updateRemoteParticipants = () => {
@@ -471,38 +256,9 @@ const MeetingRoom = () => {
         }
       });
 
-      // Handle call events
-      call.on('joined-meeting', async () => {
-        console.log('[VideoChat] Joined meeting successfully');
-        setIsCallJoined(true);
-        
-        // Wait a moment for the call to fully establish
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Initialize camera manager after joining and call is stable
-        if (localVideoRef.current && !cameraManagerRef.current) {
-          console.log('[VideoChat] Initializing camera manager for Tavus AI integration...');
-          cameraManagerRef.current = new CameraManager();
-          await cameraManagerRef.current.initialize(localVideoRef.current, call);
-          setCurrentCamera(cameraManagerRef.current.getCurrentCamera());
-          console.log('[VideoChat] Camera manager initialized, Tavus AI should receive camera feed');
-        }
-      });
-
       call.on('participant-joined', updateRemoteParticipants);
       call.on('participant-updated', updateRemoteParticipants);
       call.on('participant-left', updateRemoteParticipants);
-
-      call.on('error', (error: any) => {
-        console.error('[VideoChat] Daily.co error:', error);
-      });
-
-      // Enhanced join settings for better Tavus AI integration
-      await call.join({ 
-        url: conversation_url,
-        startVideoOff: false,
-        startAudioOff: false,
-      });
 
       // Cleanup
       return () => {
@@ -519,16 +275,27 @@ const MeetingRoom = () => {
     Object.entries(remoteParticipants).forEach(([id, p]) => {
       // Video
       const videoEl = document.getElementById(`remote-video-${id}`) as HTMLVideoElement;
-      if (videoEl && p.tracks.video && p.tracks.video.state === 'playable' && p.tracks.video.persistentTrack) {
+      if (videoEl && p.tracks.video && p.tracks.video.state === 'playable' && p.tracks.video.persistentTrack
+      ) {
         videoEl.srcObject = new MediaStream([p.tracks.video.persistentTrack]);
       }
       // Audio
       const audioEl = document.getElementById(`remote-audio-${id}`) as HTMLAudioElement;
-      if (audioEl && p.tracks.audio && p.tracks.audio.state === 'playable' && p.tracks.audio.persistentTrack) {
+      if (
+        audioEl && p.tracks.audio && p.tracks.audio.state === 'playable' && p.tracks.audio.persistentTrack
+      ) {
         audioEl.srcObject = new MediaStream([p.tracks.audio.persistentTrack]);
       }
     });
   }, [remoteParticipants]);
+
+  // Update local video when stream changes
+  useEffect(() => {
+    const localVideoEl = document.getElementById('local-video') as HTMLVideoElement;
+    if (localVideoEl && localStream) {
+      localVideoEl.srcObject = localStream;
+    }
+  }, [localStream]);
 
   // Get current score on mount
   useEffect(() => {
@@ -558,9 +325,9 @@ const MeetingRoom = () => {
         // End the call on Daily
         call.leave();
         
-        // Stop camera manager
-        if (cameraManagerRef.current) {
-          cameraManagerRef.current.destroy();
+        // Stop local stream
+        if (localStream) {
+          localStream.getTracks().forEach(track => track.stop());
         }
 
         // End the conversation on Tavus dashboard
@@ -589,7 +356,7 @@ const MeetingRoom = () => {
   };
 
   if (!isCallActive) {
-    return (
+  return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="w-24 h-24 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -605,12 +372,6 @@ const MeetingRoom = () => {
   // Get the first remote participant for main view
   const remoteParticipantEntries = Object.entries(remoteParticipants);
   const mainParticipant = remoteParticipantEntries[0];
-
-  // Determine if current camera is front-facing for mirroring
-  const isFrontCamera = currentCamera?.facingMode === 'user' || 
-                       currentCamera?.label.toLowerCase().includes('front') ||
-                       currentCamera?.label.toLowerCase().includes('user') ||
-                       currentCamera?.label.toLowerCase().includes('facetime');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 relative overflow-hidden">
@@ -632,7 +393,7 @@ const MeetingRoom = () => {
             {/* Participant name overlay */}
             <div className="absolute top-8 left-8 bg-black/30 backdrop-blur-md px-4 py-2 rounded-2xl">
               <p className="text-white font-medium text-lg">
-                {mainParticipant[1].user_name || 'AI Safety Inspector'}
+                {mainParticipant[1].user_name || 'Remote User'}
               </p>
             </div>
           </div>
@@ -642,77 +403,48 @@ const MeetingRoom = () => {
               <div className="w-32 h-32 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Video className="w-16 h-16 text-gray-400" />
               </div>
-              <h2 className="text-white text-2xl font-light mb-2">Connecting to AI Inspector...</h2>
+              <h2 className="text-white text-2xl font-light mb-2">Waiting for others to join...</h2>
               <div className="flex space-x-1 justify-center">
                 <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
                 <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                 <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
 
       {/* Picture-in-Picture local video */}
-      <div className="absolute top-6 right-6 w-24 h-32 bg-gray-800 rounded-xl overflow-hidden shadow-xl border-2 border-white/20">
+      <div className="absolute top-6 right-6 w-20 h-28 bg-gray-800 rounded-xl overflow-hidden shadow-xl border-2 border-white/20">
         {!isVideoOff ? (
           <div className="relative w-full h-full">
             <video
-              ref={localVideoRef}
+              id="local-video"
               autoPlay
               playsInline
               muted
-              onError={(e) => console.error('[VideoChat] Video element error:', e)}
-              onLoadStart={() => console.log('[VideoChat] Video load started')}
-              onLoadedData={() => console.log('[VideoChat] Video data loaded')}
-              className={`w-full h-full object-cover ${isFrontCamera ? 'transform scale-x-[-1]' : ''}`}
+              className={`w-full h-full object-cover ${currentFacingMode === 'user' ? 'transform scale-x-[-1]' : ''}`}
             />
             
             {/* Camera flip button */}
             <button 
               onClick={flipCamera}
-              disabled={isFlipping || !isCallJoined}
-              className={`absolute bottom-1 left-1 w-6 h-6 bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/90 transition-all duration-200 group hover:scale-110 ${isFlipping || !isCallJoined ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={!isCallJoined ? 'Connecting...' : isFlipping ? 'Switching camera for AI...' : 'Flip camera'}
+              className="absolute bottom-1 left-1 w-6 h-6 bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/90 transition-all duration-200 group"
+              title="Flip camera"
             >
-              <RotateCcw className={`w-3 h-3 text-white transition-transform duration-500 ${isFlipping ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+              <RotateCcw className="w-3 h-3 text-white group-hover:rotate-180 transition-transform duration-300" />
             </button>
-            
-            {/* Camera mode indicator */}
-            <div className="absolute top-1 left-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5">
-              <span className="text-white text-xs font-medium">
-                {currentCamera?.facingMode === 'user' ? 'Front' : 
-                 currentCamera?.facingMode === 'environment' ? 'Rear' : 
-                 currentCamera?.label.includes('front') || currentCamera?.label.includes('facetime') ? 'Front' :
-                 currentCamera?.label.includes('back') || currentCamera?.label.includes('rear') ? 'Rear' : 'Cam'}
-              </span>
-            </div>
-            
-            {/* AI Integration Status */}
-            <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-400 animate-pulse" title="AI receiving camera feed"></div>
-            
-            {/* Connection status indicator */}
-            {!isCallJoined && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            )}
-            
-            {/* Camera switching indicator */}
-            {isFlipping && (
-              <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-1"></div>
-                  <span className="text-white text-xs">Updating AI feed...</span>
-                </div>
-              </div>
-            )}
           </div>
         ) : (
           <div className="w-full h-full bg-gray-700 flex items-center justify-center">
             <VideoOff className="w-4 h-4 text-gray-400" />
           </div>
         )}
+        
+        {/* PiP minimize button */}
+        <button className="absolute top-1 right-1 w-4 h-4 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center">
+          <Minimize2 className="w-2 h-2 text-white" />
+        </button>
       </div>
 
       {/* Control buttons */}
@@ -776,18 +508,10 @@ const MeetingRoom = () => {
         </div>
       )}
 
-      {/* Call status and score */}
+      {/* Call duration */}
       <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-black/30 backdrop-blur-md px-4 py-2 rounded-2xl">
         <p className="text-white font-medium">
-          {!isCallJoined ? 'Connecting...' : `Score: ${auditScore}/100`}
-          {currentCamera && isCallJoined && (
-            <span className="ml-2 text-xs text-gray-300">
-              • AI viewing: {currentCamera.facingMode === 'user' ? 'Front' : 
-                           currentCamera.facingMode === 'environment' ? 'Rear' : 
-                           currentCamera.label.includes('front') || currentCamera.label.includes('facetime') ? 'Front' :
-                           currentCamera.label.includes('back') || currentCamera.label.includes('rear') ? 'Rear' : 'Camera'}
-            </span>
-          )}
+          Score: {auditScore}/100
         </p>
       </div>
 
