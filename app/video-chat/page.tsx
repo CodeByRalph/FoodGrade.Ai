@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import DailyIframe from '@daily-co/daily-js';
-import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Minimize2 } from 'lucide-react';
+import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Minimize2, RotateCcw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { logViolation } from '@/ai-tools/log_violation';
 import { realTimeCoaching } from '@/ai-tools/real_time_coaching';
@@ -69,6 +69,7 @@ const MeetingRoom = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [auditScore, setAuditScore] = useState(100);
   const [coachingMessages, setCoachingMessages] = useState<CoachingMessage[]>([]);
+  const [currentFacingMode, setCurrentFacingMode] = useState<'user' | 'environment'>('user');
   const router = useRouter();
 
   // Handle perception tool call events
@@ -133,6 +134,70 @@ const MeetingRoom = () => {
     }
   };
 
+  const flipCamera = async () => {
+    try {
+      const call = callRef.current;
+      if (!call) return;
+
+      // Stop current video track
+      await call.setLocalVideo(false);
+      
+      // Stop the current local stream
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+      }
+
+      // Get new stream with opposite facing mode
+      const newFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+      
+      try {
+        const newStream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: newFacingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: true
+        });
+        
+        setLocalStream(newStream);
+        setCurrentFacingMode(newFacingMode);
+        
+        // Update the call with new video track
+        const videoTrack = newStream.getVideoTracks()[0];
+        if (videoTrack) {
+          await call.updateInputSettings({
+            video: {
+              processor: {
+                type: 'none'
+              }
+            }
+          });
+          
+          // Replace the video track
+          await call.setLocalVideo(true);
+        }
+        
+        console.log('[VideoChat] Camera flipped to:', newFacingMode);
+      } catch (error) {
+        console.error('[VideoChat] Error flipping camera:', error);
+        // Fallback: try to get any available camera
+        try {
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+          });
+          setLocalStream(fallbackStream);
+          await call.setLocalVideo(true);
+        } catch (fallbackError) {
+          console.error('[VideoChat] Fallback camera access failed:', fallbackError);
+        }
+      }
+    } catch (error) {
+      console.error('[VideoChat] Error in flipCamera:', error);
+    }
+  };
+
   useEffect(() => {
     const get_conversation_url = async () => {
       const response = await fetch('/api/tavus', {
@@ -158,7 +223,14 @@ const MeetingRoom = () => {
 
       // Get local stream for PiP view
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: currentFacingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }, 
+          audio: true 
+        });
         setLocalStream(stream);
       } catch (error) {
         console.error('Error getting local stream:', error);
@@ -345,13 +417,24 @@ const MeetingRoom = () => {
       {/* Picture-in-Picture local video */}
       <div className="absolute top-6 right-6 w-20 h-28 bg-gray-800 rounded-xl overflow-hidden shadow-xl border-2 border-white/20">
         {!isVideoOff ? (
-          <video
-            id="local-video"
-            autoPlay
-            playsInline
-            muted
-            className="w-full h-full object-cover transform scale-x-[-1]"
-          />
+          <div className="relative w-full h-full">
+            <video
+              id="local-video"
+              autoPlay
+              playsInline
+              muted
+              className={`w-full h-full object-cover ${currentFacingMode === 'user' ? 'transform scale-x-[-1]' : ''}`}
+            />
+            
+            {/* Camera flip button */}
+            <button 
+              onClick={flipCamera}
+              className="absolute bottom-1 left-1 w-6 h-6 bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/90 transition-all duration-200 group"
+              title="Flip camera"
+            >
+              <RotateCcw className="w-3 h-3 text-white group-hover:rotate-180 transition-transform duration-300" />
+            </button>
+          </div>
         ) : (
           <div className="w-full h-full bg-gray-700 flex items-center justify-center">
             <VideoOff className="w-4 h-4 text-gray-400" />
@@ -362,7 +445,7 @@ const MeetingRoom = () => {
         <button className="absolute top-1 right-1 w-4 h-4 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center">
           <Minimize2 className="w-2 h-2 text-white" />
         </button>
-        </div>
+      </div>
 
       {/* Control buttons */}
       <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2">
