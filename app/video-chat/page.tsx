@@ -83,9 +83,6 @@ const MeetingRoom = () => {
 
       console.log('[VideoChat] Starting camera flip from:', currentFacingMode);
       
-      // Temporarily disable video to prevent conflicts
-      await call.setLocalVideo(false);
-      
       // Stop current local stream tracks
       if (localStream) {
         localStream.getTracks().forEach(track => {
@@ -115,8 +112,21 @@ const MeetingRoom = () => {
         setLocalStream(newStream);
         setCurrentFacingMode(newFacingMode);
         
-        // Re-enable video with new stream
-        await call.setLocalVideo(true);
+        // Get the video track from the new stream
+        const videoTrack = newStream.getVideoTracks()[0];
+        if (videoTrack) {
+          console.log('[VideoChat] Updating Daily.co with new video track:', videoTrack.label);
+          
+          // Update Daily.co's video input to use the new camera
+          await call.updateInputSettings({
+            video: {
+              deviceId: videoTrack.getSettings().deviceId
+            }
+          });
+          
+          // Ensure video is enabled
+          await call.setLocalVideo(true);
+        }
         
         console.log('[VideoChat] Camera flip completed successfully to:', newFacingMode);
         
@@ -130,6 +140,15 @@ const MeetingRoom = () => {
             video: true,
             audio: true
           });
+          
+          const videoTrack = fallbackStream.getVideoTracks()[0];
+          if (videoTrack) {
+            await call.updateInputSettings({
+              video: {
+                deviceId: videoTrack.getSettings().deviceId
+              }
+            });
+          }
           
           setLocalStream(fallbackStream);
           await call.setLocalVideo(true);
