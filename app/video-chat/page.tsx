@@ -72,6 +72,80 @@ const MeetingRoom = () => {
   const [currentFacingMode, setCurrentFacingMode] = useState<'user' | 'environment'>('user');
   const router = useRouter();
 
+  // Enhanced camera flip function
+  const flipCamera = async () => {
+    try {
+      const call = callRef.current;
+      if (!call) {
+        console.log('[VideoChat] No call object available for camera flip');
+        return;
+      }
+
+      console.log('[VideoChat] Starting camera flip from:', currentFacingMode);
+      
+      // Temporarily disable video to prevent conflicts
+      await call.setLocalVideo(false);
+      
+      // Stop current local stream tracks
+      if (localStream) {
+        localStream.getTracks().forEach(track => {
+          console.log('[VideoChat] Stopping track:', track.kind, track.label);
+          track.stop();
+        });
+      }
+
+      // Determine new facing mode
+      const newFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+      console.log('[VideoChat] Switching to camera:', newFacingMode);
+      
+      try {
+        // Request new stream with opposite facing mode
+        const newStream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: newFacingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: true
+        });
+        
+        console.log('[VideoChat] New stream acquired:', newStream.id);
+        
+        // Update state with new stream and facing mode
+        setLocalStream(newStream);
+        setCurrentFacingMode(newFacingMode);
+        
+        // Re-enable video with new stream
+        await call.setLocalVideo(true);
+        
+        console.log('[VideoChat] Camera flip completed successfully to:', newFacingMode);
+        
+      } catch (cameraError) {
+        console.error('[VideoChat] Error accessing new camera:', cameraError);
+        
+        // Fallback: try to get any available camera
+        try {
+          console.log('[VideoChat] Attempting fallback camera access');
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+          });
+          
+          setLocalStream(fallbackStream);
+          await call.setLocalVideo(true);
+          console.log('[VideoChat] Fallback camera access successful');
+          
+        } catch (fallbackError) {
+          console.error('[VideoChat] Fallback camera access failed:', fallbackError);
+          // Re-enable video even if we couldn't switch cameras
+          await call.setLocalVideo(true);
+        }
+      }
+    } catch (error) {
+      console.error('[VideoChat] Error in flipCamera function:', error);
+    }
+  };
+
   // Handle perception tool call events
   const handlePerceptionEvent = async (event: PerceptionEvent) => {
     console.log('[VideoChat] Perception event received:', event);
@@ -131,70 +205,6 @@ const MeetingRoom = () => {
                 }
               } catch (error) {
       console.error('[VideoChat] Error handling perception event:', error);
-    }
-  };
-
-  const flipCamera = async () => {
-    try {
-      const call = callRef.current;
-      if (!call) return;
-
-      // Stop current video track
-      await call.setLocalVideo(false);
-      
-      // Stop the current local stream
-      if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-      }
-
-      // Get new stream with opposite facing mode
-      const newFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-      
-      try {
-        const newStream = await navigator.mediaDevices.getUserMedia({
-          video: { 
-            facingMode: newFacingMode,
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
-          audio: true
-        });
-        
-        setLocalStream(newStream);
-        setCurrentFacingMode(newFacingMode);
-        
-        // Update the call with new video track
-        const videoTrack = newStream.getVideoTracks()[0];
-        if (videoTrack) {
-          await call.updateInputSettings({
-            video: {
-              processor: {
-                type: 'none'
-              }
-            }
-          });
-          
-          // Replace the video track
-          await call.setLocalVideo(true);
-        }
-        
-        console.log('[VideoChat] Camera flipped to:', newFacingMode);
-      } catch (error) {
-        console.error('[VideoChat] Error flipping camera:', error);
-        // Fallback: try to get any available camera
-        try {
-          const fallbackStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true
-          });
-          setLocalStream(fallbackStream);
-          await call.setLocalVideo(true);
-        } catch (fallbackError) {
-          console.error('[VideoChat] Fallback camera access failed:', fallbackError);
-        }
-      }
-    } catch (error) {
-      console.error('[VideoChat] Error in flipCamera:', error);
     }
   };
 
@@ -429,22 +439,24 @@ const MeetingRoom = () => {
             {/* Camera flip button */}
             <button 
               onClick={flipCamera}
-              className="absolute bottom-1 left-1 w-6 h-6 bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/90 transition-all duration-200 group"
+              className="absolute bottom-1 left-1 w-6 h-6 bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/90 transition-all duration-200 group hover:scale-110"
               title="Flip camera"
             >
-              <RotateCcw className="w-3 h-3 text-white group-hover:rotate-180 transition-transform duration-300" />
+              <RotateCcw className="w-3 h-3 text-white group-hover:rotate-180 transition-transform duration-500" />
             </button>
+            
+            {/* Camera mode indicator */}
+            <div className="absolute top-1 left-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5">
+              <span className="text-white text-xs font-medium">
+                {currentFacingMode === 'user' ? 'Front' : 'Rear'}
+              </span>
+            </div>
           </div>
         ) : (
           <div className="w-full h-full bg-gray-700 flex items-center justify-center">
             <VideoOff className="w-4 h-4 text-gray-400" />
           </div>
         )}
-        
-        {/* PiP minimize button */}
-        <button className="absolute top-1 right-1 w-4 h-4 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center">
-          <Minimize2 className="w-2 h-2 text-white" />
-        </button>
       </div>
 
       {/* Control buttons */}
