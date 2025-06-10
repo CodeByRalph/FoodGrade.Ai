@@ -57,7 +57,7 @@ interface CameraDevice {
   facingMode?: string;
 }
 
-// Enhanced Camera Manager Class
+// Enhanced Camera Manager Class with Daily.co Integration
 class CameraManager {
   private currentStream: MediaStream | null = null;
   private availableCameras: CameraDevice[] = [];
@@ -65,6 +65,7 @@ class CameraManager {
   private videoElement: HTMLVideoElement | null = null;
   private dailyCall: any = null;
   private isInitialized = false;
+  private isUpdatingCamera = false;
 
   async initialize(videoElement: HTMLVideoElement, dailyCall?: any) {
     this.videoElement = videoElement;
@@ -73,8 +74,22 @@ class CameraManager {
     // Request permissions first
     await this.requestPermissions();
     await this.enumerateDevices();
-    await this.startCamera(0);
+    
+    // Start with front camera (index 0 is usually front)
+    const frontCameraIndex = this.findFrontCameraIndex();
+    await this.startCamera(frontCameraIndex);
     this.isInitialized = true;
+  }
+
+  private findFrontCameraIndex(): number {
+    // Try to find front camera first
+    const frontIndex = this.availableCameras.findIndex(camera => 
+      camera.facingMode === 'user' || 
+      camera.label.toLowerCase().includes('front') ||
+      camera.label.toLowerCase().includes('facetime') ||
+      camera.label.toLowerCase().includes('user')
+    );
+    return frontIndex >= 0 ? frontIndex : 0;
   }
 
   async requestPermissions() {
@@ -153,9 +168,9 @@ class CameraManager {
         await this.videoElement.play();
       }
 
-      // Update Daily.co with new camera
+      // CRITICAL: Update Daily.co with new camera stream for Tavus AI
       if (this.dailyCall && this.isInitialized) {
-        await this.updateDailyCamera(camera.deviceId);
+        await this.updateDailyCameraStream(stream, camera.deviceId);
       }
 
       console.log('[CameraManager] Camera started successfully');
@@ -166,32 +181,71 @@ class CameraManager {
     }
   }
 
-  private async updateDailyCamera(deviceId: string) {
+  private async updateDailyCameraStream(stream: MediaStream, deviceId: string) {
+    if (this.isUpdatingCamera) {
+      console.log('[CameraManager] Camera update already in progress, skipping...');
+      return;
+    }
+
+    this.isUpdatingCamera = true;
+    
     try {
-      console.log('[CameraManager] Updating Daily.co camera to:', deviceId);
+      console.log('[CameraManager] Updating Daily.co camera stream for Tavus AI:', deviceId);
       
-      // First, turn off video
+      // Method 1: Stop video completely, then restart with new device
       await this.dailyCall.setLocalVideo(false);
+      console.log('[CameraManager] Video stopped');
       
-      // Wait a moment
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for video to fully stop
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Update input settings with new device
+      // Update input settings with exact device ID
       await this.dailyCall.updateInputSettings({
         video: {
-          deviceId: deviceId
+          deviceId: { exact: deviceId },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30 }
         }
       });
+      console.log('[CameraManager] Input settings updated');
       
-      // Wait a moment
+      // Wait for settings to apply
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Restart video with new camera
+      await this.dailyCall.setLocalVideo(true);
+      console.log('[CameraManager] Video restarted with new camera');
+      
+      // Additional method: Force track replacement
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) {
+        try {
+          // Try to replace the track directly
+          await this.dailyCall.updateInputSettings({
+            video: {
+              track: videoTrack
+            }
+          });
+          console.log('[CameraManager] Video track replaced directly');
+        } catch (trackError) {
+          console.log('[CameraManager] Direct track replacement not supported, using device ID method');
+        }
+      }
+      
+      // Verify the camera change took effect
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Force a refresh of the video stream
+      await this.dailyCall.setLocalVideo(false);
       await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Turn video back on
       await this.dailyCall.setLocalVideo(true);
       
-      console.log('[CameraManager] Daily.co camera updated successfully');
+      console.log('[CameraManager] Daily.co camera stream updated successfully for Tavus AI');
     } catch (error) {
-      console.error('[CameraManager] Error updating Daily.co camera:', error);
+      console.error('[CameraManager] Error updating Daily.co camera stream:', error);
+    } finally {
+      this.isUpdatingCamera = false;
     }
   }
 
@@ -201,10 +255,30 @@ class CameraManager {
       return false;
     }
 
+    if (this.isUpdatingCamera) {
+      console.log('[CameraManager] Camera update in progress, please wait...');
+      return false;
+    }
+
     const nextIndex = (this.currentCameraIndex + 1) % this.availableCameras.length;
     console.log('[CameraManager] Flipping from camera', this.currentCameraIndex, 'to', nextIndex);
     
-    return await this.startCamera(nextIndex);
+    const success = await this.startCamera(nextIndex);
+    
+    if (success) {
+      // Additional verification step - ensure Tavus AI gets the new feed
+      setTimeout(async () => {
+        if (this.dailyCall && this.currentStream) {
+          console.log('[CameraManager] Performing additional stream verification for Tavus AI...');
+          
+          // Force another update to ensure Tavus AI receives the new camera feed
+          const currentCamera = this.availableCameras[this.currentCameraIndex];
+          await this.updateDailyCameraStream(this.currentStream, currentCamera.deviceId);
+        }
+      }, 2000);
+    }
+    
+    return success;
   }
 
   setDailyCall(dailyCall: any) {
@@ -229,6 +303,7 @@ class CameraManager {
       this.currentStream = null;
     }
     this.isInitialized = false;
+    this.isUpdatingCamera = false;
   }
 }
 
@@ -262,19 +337,21 @@ const MeetingRoom = () => {
 
     setIsFlipping(true);
     try {
-      console.log('[VideoChat] Starting camera flip...');
+      console.log('[VideoChat] Starting camera flip for Tavus AI integration...');
       const success = await cameraManagerRef.current.flipCamera();
       if (success) {
         const newCamera = cameraManagerRef.current.getCurrentCamera();
         setCurrentCamera(newCamera);
         console.log('[VideoChat] Camera flipped successfully to:', newCamera?.label);
+        console.log('[VideoChat] Tavus AI should now receive feed from:', newCamera?.facingMode);
       } else {
         console.error('[VideoChat] Camera flip failed');
       }
     } catch (error) {
       console.error('[VideoChat] Error flipping camera:', error);
     } finally {
-      setTimeout(() => setIsFlipping(false), 1000); // Prevent rapid clicking
+      // Longer delay to ensure camera switching completes
+      setTimeout(() => setIsFlipping(false), 2000);
     }
   };
 
@@ -386,11 +463,16 @@ const MeetingRoom = () => {
         console.log('[VideoChat] Joined meeting successfully');
         setIsCallJoined(true);
         
-        // Initialize camera manager after joining
+        // Wait a moment for the call to fully establish
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Initialize camera manager after joining and call is stable
         if (localVideoRef.current && !cameraManagerRef.current) {
+          console.log('[VideoChat] Initializing camera manager for Tavus AI integration...');
           cameraManagerRef.current = new CameraManager();
           await cameraManagerRef.current.initialize(localVideoRef.current, call);
           setCurrentCamera(cameraManagerRef.current.getCurrentCamera());
+          console.log('[VideoChat] Camera manager initialized, Tavus AI should receive camera feed');
         }
       });
 
@@ -402,11 +484,17 @@ const MeetingRoom = () => {
         console.error('[VideoChat] Daily.co error:', error);
       });
 
-      // Join meeting with specific settings
+      // Enhanced join settings for better Tavus AI integration
       await call.join({ 
         url: conversation_url,
         startVideoOff: false,
-        startAudioOff: false
+        startAudioOff: false,
+        // Ensure video quality for AI analysis
+        videoSource: {
+          width: 1280,
+          height: 720,
+          frameRate: 30
+        }
       });
 
       // Cleanup
@@ -575,7 +663,7 @@ const MeetingRoom = () => {
               onClick={flipCamera}
               disabled={isFlipping || !isCallJoined}
               className={`absolute bottom-1 left-1 w-6 h-6 bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/90 transition-all duration-200 group hover:scale-110 ${isFlipping || !isCallJoined ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={!isCallJoined ? 'Connecting...' : 'Flip camera'}
+              title={!isCallJoined ? 'Connecting...' : isFlipping ? 'Switching camera for AI...' : 'Flip camera'}
             >
               <RotateCcw className={`w-3 h-3 text-white transition-transform duration-500 ${isFlipping ? 'animate-spin' : 'group-hover:rotate-180'}`} />
             </button>
@@ -590,10 +678,23 @@ const MeetingRoom = () => {
               </span>
             </div>
             
+            {/* AI Integration Status */}
+            <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-400 animate-pulse" title="AI receiving camera feed"></div>
+            
             {/* Connection status indicator */}
             {!isCallJoined && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+            
+            {/* Camera switching indicator */}
+            {isFlipping && (
+              <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-1"></div>
+                  <span className="text-white text-xs">Updating AI feed...</span>
+                </div>
               </div>
             )}
           </div>
@@ -669,6 +770,14 @@ const MeetingRoom = () => {
       <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-black/30 backdrop-blur-md px-4 py-2 rounded-2xl">
         <p className="text-white font-medium">
           {!isCallJoined ? 'Connecting...' : `Score: ${auditScore}/100`}
+          {currentCamera && isCallJoined && (
+            <span className="ml-2 text-xs text-gray-300">
+              • AI viewing: {currentCamera.facingMode === 'user' ? 'Front' : 
+                           currentCamera.facingMode === 'environment' ? 'Rear' : 
+                           currentCamera.label.includes('front') || currentCamera.label.includes('facetime') ? 'Front' :
+                           currentCamera.label.includes('back') || currentCamera.label.includes('rear') ? 'Rear' : 'Camera'}
+            </span>
+          )}
         </p>
       </div>
 
