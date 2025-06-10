@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Allow external connections for mobile testing
+  experimental: {
+    allowedRevalidateHeaderKeys: [],
+  },
   webpack: (config, { dev }) => {
     if (dev) {
       config.watchOptions = {
