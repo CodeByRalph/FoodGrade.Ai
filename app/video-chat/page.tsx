@@ -57,24 +57,43 @@ interface CameraDevice {
   facingMode?: string;
 }
 
-// Camera Manager Class
+// Enhanced Camera Manager Class
 class CameraManager {
   private currentStream: MediaStream | null = null;
   private availableCameras: CameraDevice[] = [];
   private currentCameraIndex = 0;
   private videoElement: HTMLVideoElement | null = null;
+  private dailyCall: any = null;
+  private isInitialized = false;
 
-  async initialize(videoElement: HTMLVideoElement) {
+  async initialize(videoElement: HTMLVideoElement, dailyCall?: any) {
     this.videoElement = videoElement;
+    this.dailyCall = dailyCall;
+    
+    // Request permissions first
+    await this.requestPermissions();
     await this.enumerateDevices();
     await this.startCamera(0);
+    this.isInitialized = true;
+  }
+
+  async requestPermissions() {
+    try {
+      // Request both video and audio permissions
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      console.log('[CameraManager] Permissions granted');
+    } catch (error) {
+      console.error('[CameraManager] Permission denied:', error);
+      throw error;
+    }
   }
 
   async enumerateDevices() {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
       this.availableCameras = devices
-        .filter(device => device.kind === 'videoinput')
+        .filter(device => device.kind === 'videoinput' && device.deviceId)
         .map(device => ({
           deviceId: device.deviceId,
           label: device.label || `Camera ${device.deviceId.slice(0, 8)}`,
@@ -89,18 +108,13 @@ class CameraManager {
 
   private guessFacingMode(label: string): string {
     const lowerLabel = label.toLowerCase();
-    if (lowerLabel.includes('front') || lowerLabel.includes('user')) return 'user';
+    if (lowerLabel.includes('front') || lowerLabel.includes('user') || lowerLabel.includes('facetime')) return 'user';
     if (lowerLabel.includes('back') || lowerLabel.includes('rear') || lowerLabel.includes('environment')) return 'environment';
     return 'unknown';
   }
 
   async startCamera(cameraIndex: number) {
     try {
-      // Stop current stream if exists
-      if (this.currentStream) {
-        this.currentStream.getTracks().forEach(track => track.stop());
-      }
-
       const camera = this.availableCameras[cameraIndex];
       if (!camera) {
         console.error('[CameraManager] Camera not found at index:', cameraIndex);
@@ -113,25 +127,71 @@ class CameraManager {
         video: {
           deviceId: { exact: camera.deviceId },
           width: { ideal: 1280 },
-          height: { ideal: 720 }
+          height: { ideal: 720 },
+          frameRate: { ideal: 30 }
         },
-        audio: true
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      // Stop previous stream
+      if (this.currentStream) {
+        this.currentStream.getTracks().forEach(track => track.stop());
+      }
+
       this.currentStream = stream;
       this.currentCameraIndex = cameraIndex;
 
+      // Update PiP video element
       if (this.videoElement) {
         this.videoElement.srcObject = stream;
         await this.videoElement.play();
-        console.log('[CameraManager] Camera started successfully');
       }
 
+      // Update Daily.co with new camera
+      if (this.dailyCall && this.isInitialized) {
+        await this.updateDailyCamera(camera.deviceId);
+      }
+
+      console.log('[CameraManager] Camera started successfully');
       return true;
     } catch (error) {
       console.error('[CameraManager] Error starting camera:', error);
       return false;
+    }
+  }
+
+  private async updateDailyCamera(deviceId: string) {
+    try {
+      console.log('[CameraManager] Updating Daily.co camera to:', deviceId);
+      
+      // First, turn off video
+      await this.dailyCall.setLocalVideo(false);
+      
+      // Wait a moment
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Update input settings with new device
+      await this.dailyCall.updateInputSettings({
+        video: {
+          deviceId: deviceId
+        }
+      });
+      
+      // Wait a moment
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Turn video back on
+      await this.dailyCall.setLocalVideo(true);
+      
+      console.log('[CameraManager] Daily.co camera updated successfully');
+    } catch (error) {
+      console.error('[CameraManager] Error updating Daily.co camera:', error);
     }
   }
 
@@ -147,6 +207,10 @@ class CameraManager {
     return await this.startCamera(nextIndex);
   }
 
+  setDailyCall(dailyCall: any) {
+    this.dailyCall = dailyCall;
+  }
+
   getCurrentCamera(): CameraDevice | null {
     return this.availableCameras[this.currentCameraIndex] || null;
   }
@@ -155,11 +219,16 @@ class CameraManager {
     return this.currentStream;
   }
 
+  getAvailableCameras(): CameraDevice[] {
+    return this.availableCameras;
+  }
+
   destroy() {
     if (this.currentStream) {
       this.currentStream.getTracks().forEach(track => track.stop());
       this.currentStream = null;
     }
+    this.isInitialized = false;
   }
 }
 
@@ -184,60 +253,28 @@ const MeetingRoom = () => {
   const [coachingMessages, setCoachingMessages] = useState<CoachingMessage[]>([]);
   const [currentCamera, setCurrentCamera] = useState<CameraDevice | null>(null);
   const [isFlipping, setIsFlipping] = useState(false);
+  const [isCallJoined, setIsCallJoined] = useState(false);
   const router = useRouter();
-
-  // Initialize camera manager
-  useEffect(() => {
-    const initializeCamera = async () => {
-      if (localVideoRef.current && !cameraManagerRef.current) {
-        cameraManagerRef.current = new CameraManager();
-        await cameraManagerRef.current.initialize(localVideoRef.current);
-        setCurrentCamera(cameraManagerRef.current.getCurrentCamera());
-      }
-    };
-
-    initializeCamera();
-
-    return () => {
-      if (cameraManagerRef.current) {
-        cameraManagerRef.current.destroy();
-        cameraManagerRef.current = null;
-      }
-    };
-  }, []);
 
   // Enhanced camera flip function
   const flipCamera = async () => {
-    if (!cameraManagerRef.current || isFlipping) return;
+    if (!cameraManagerRef.current || isFlipping || !isCallJoined) return;
 
     setIsFlipping(true);
     try {
+      console.log('[VideoChat] Starting camera flip...');
       const success = await cameraManagerRef.current.flipCamera();
       if (success) {
         const newCamera = cameraManagerRef.current.getCurrentCamera();
         setCurrentCamera(newCamera);
-        
-        // Update Daily.co with the new stream
-        const call = callRef.current;
-        if (call) {
-          const newStream = cameraManagerRef.current.getCurrentStream();
-          if (newStream) {
-            const videoTrack = newStream.getVideoTracks()[0];
-            if (videoTrack) {
-              await call.updateInputSettings({
-                video: {
-                  deviceId: videoTrack.getSettings().deviceId
-                }
-              });
-              console.log('[VideoChat] Updated Daily.co with new camera');
-            }
-          }
-        }
+        console.log('[VideoChat] Camera flipped successfully to:', newCamera?.label);
+      } else {
+        console.error('[VideoChat] Camera flip failed');
       }
     } catch (error) {
       console.error('[VideoChat] Error flipping camera:', error);
     } finally {
-      setIsFlipping(false);
+      setTimeout(() => setIsFlipping(false), 1000); // Prevent rapid clicking
     }
   };
 
@@ -319,12 +356,10 @@ const MeetingRoom = () => {
     const join_meeting = async () => {
       const conversation_url = await get_conversation_url();
       console.log('[VideoChat] Conversation URL:', conversation_url);
+      
       // Only create or get one call object per page
       const call = getOrCreateCallObject();
       callRef.current = call;
-
-      // Join meeting
-      call.join({ url: conversation_url});
 
       // Handle remote participants
       const updateRemoteParticipants = () => {
@@ -346,9 +381,33 @@ const MeetingRoom = () => {
         }
       });
 
+      // Handle call events
+      call.on('joined-meeting', async () => {
+        console.log('[VideoChat] Joined meeting successfully');
+        setIsCallJoined(true);
+        
+        // Initialize camera manager after joining
+        if (localVideoRef.current && !cameraManagerRef.current) {
+          cameraManagerRef.current = new CameraManager();
+          await cameraManagerRef.current.initialize(localVideoRef.current, call);
+          setCurrentCamera(cameraManagerRef.current.getCurrentCamera());
+        }
+      });
+
       call.on('participant-joined', updateRemoteParticipants);
       call.on('participant-updated', updateRemoteParticipants);
       call.on('participant-left', updateRemoteParticipants);
+
+      call.on('error', (error: any) => {
+        console.error('[VideoChat] Daily.co error:', error);
+      });
+
+      // Join meeting with specific settings
+      await call.join({ 
+        url: conversation_url,
+        startVideoOff: false,
+        startAudioOff: false
+      });
 
       // Cleanup
       return () => {
@@ -365,15 +424,12 @@ const MeetingRoom = () => {
     Object.entries(remoteParticipants).forEach(([id, p]) => {
       // Video
       const videoEl = document.getElementById(`remote-video-${id}`) as HTMLVideoElement;
-      if (videoEl && p.tracks.video && p.tracks.video.state === 'playable' && p.tracks.video.persistentTrack
-      ) {
+      if (videoEl && p.tracks.video && p.tracks.video.state === 'playable' && p.tracks.video.persistentTrack) {
         videoEl.srcObject = new MediaStream([p.tracks.video.persistentTrack]);
       }
       // Audio
       const audioEl = document.getElementById(`remote-audio-${id}`) as HTMLAudioElement;
-      if (
-        audioEl && p.tracks.audio && p.tracks.audio.state === 'playable' && p.tracks.audio.persistentTrack
-      ) {
+      if (audioEl && p.tracks.audio && p.tracks.audio.state === 'playable' && p.tracks.audio.persistentTrack) {
         audioEl.srcObject = new MediaStream([p.tracks.audio.persistentTrack]);
       }
     });
@@ -458,7 +514,8 @@ const MeetingRoom = () => {
   // Determine if current camera is front-facing for mirroring
   const isFrontCamera = currentCamera?.facingMode === 'user' || 
                        currentCamera?.label.toLowerCase().includes('front') ||
-                       currentCamera?.label.toLowerCase().includes('user');
+                       currentCamera?.label.toLowerCase().includes('user') ||
+                       currentCamera?.label.toLowerCase().includes('facetime');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 relative overflow-hidden">
@@ -480,7 +537,7 @@ const MeetingRoom = () => {
             {/* Participant name overlay */}
             <div className="absolute top-8 left-8 bg-black/30 backdrop-blur-md px-4 py-2 rounded-2xl">
               <p className="text-white font-medium text-lg">
-                {mainParticipant[1].user_name || 'Remote User'}
+                {mainParticipant[1].user_name || 'AI Safety Inspector'}
               </p>
             </div>
           </div>
@@ -490,7 +547,7 @@ const MeetingRoom = () => {
               <div className="w-32 h-32 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Video className="w-16 h-16 text-gray-400" />
               </div>
-              <h2 className="text-white text-2xl font-light mb-2">Waiting for others to join...</h2>
+              <h2 className="text-white text-2xl font-light mb-2">Connecting to AI Inspector...</h2>
               <div className="flex space-x-1 justify-center">
                 <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
                 <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
@@ -516,9 +573,9 @@ const MeetingRoom = () => {
             {/* Camera flip button */}
             <button 
               onClick={flipCamera}
-              disabled={isFlipping}
-              className={`absolute bottom-1 left-1 w-6 h-6 bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/90 transition-all duration-200 group hover:scale-110 ${isFlipping ? 'opacity-50' : ''}`}
-              title="Flip camera"
+              disabled={isFlipping || !isCallJoined}
+              className={`absolute bottom-1 left-1 w-6 h-6 bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/90 transition-all duration-200 group hover:scale-110 ${isFlipping || !isCallJoined ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={!isCallJoined ? 'Connecting...' : 'Flip camera'}
             >
               <RotateCcw className={`w-3 h-3 text-white transition-transform duration-500 ${isFlipping ? 'animate-spin' : 'group-hover:rotate-180'}`} />
             </button>
@@ -528,10 +585,17 @@ const MeetingRoom = () => {
               <span className="text-white text-xs font-medium">
                 {currentCamera?.facingMode === 'user' ? 'Front' : 
                  currentCamera?.facingMode === 'environment' ? 'Rear' : 
-                 currentCamera?.label.includes('front') ? 'Front' :
-                 currentCamera?.label.includes('back') ? 'Rear' : 'Cam'}
+                 currentCamera?.label.includes('front') || currentCamera?.label.includes('facetime') ? 'Front' :
+                 currentCamera?.label.includes('back') || currentCamera?.label.includes('rear') ? 'Rear' : 'Cam'}
               </span>
             </div>
+            
+            {/* Connection status indicator */}
+            {!isCallJoined && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="w-full h-full bg-gray-700 flex items-center justify-center">
@@ -601,10 +665,10 @@ const MeetingRoom = () => {
         </div>
       )}
 
-      {/* Call duration */}
+      {/* Call status and score */}
       <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-black/30 backdrop-blur-md px-4 py-2 rounded-2xl">
         <p className="text-white font-medium">
-          Score: {auditScore}/100
+          {!isCallJoined ? 'Connecting...' : `Score: ${auditScore}/100`}
         </p>
       </div>
 
