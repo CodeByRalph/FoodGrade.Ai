@@ -83,13 +83,6 @@ const MeetingRoom = () => {
 
       console.log('[VideoChat] Starting camera flip from:', currentFacingMode);
       
-      // Stop current local stream tracks
-      if (localStream) {
-        localStream.getTracks().forEach(track => {
-          console.log('[VideoChat] Stopping track:', track.kind, track.label);
-          track.stop();
-        });
-      }
 
       // Determine new facing mode
       const newFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
@@ -107,6 +100,14 @@ const MeetingRoom = () => {
         });
         
         console.log('[VideoChat] New stream acquired:', newStream.id);
+        
+        // Stop old stream tracks AFTER we have the new stream
+        if (localStream) {
+          localStream.getTracks().forEach(track => {
+            console.log('[VideoChat] Stopping old track:', track.kind, track.label);
+            track.stop();
+          });
+        }
         
         // Update state with new stream and facing mode
         setLocalStream(newStream);
@@ -140,6 +141,11 @@ const MeetingRoom = () => {
             video: true,
             audio: true
           });
+          
+          // Stop old stream tracks before setting fallback
+          if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+          }
           
           const videoTrack = fallbackStream.getVideoTracks()[0];
           if (videoTrack) {
@@ -322,7 +328,13 @@ const MeetingRoom = () => {
   useEffect(() => {
     const localVideoEl = document.getElementById('local-video') as HTMLVideoElement;
     if (localVideoEl && localStream) {
+      console.log('[VideoChat] Updating local video element with new stream:', localStream.id);
       localVideoEl.srcObject = localStream;
+      
+      // Ensure the video plays
+      localVideoEl.play().catch(error => {
+        console.error('[VideoChat] Error playing local video:', error);
+      });
     }
   }, [localStream]);
 
