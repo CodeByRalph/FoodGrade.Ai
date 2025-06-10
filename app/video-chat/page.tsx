@@ -51,6 +51,118 @@ interface CoachingMessage {
   severity: 'high' | 'medium' | 'low';
 }
 
+interface CameraDevice {
+  deviceId: string;
+  label: string;
+  facingMode?: string;
+}
+
+// Camera Manager Class
+class CameraManager {
+  private currentStream: MediaStream | null = null;
+  private availableCameras: CameraDevice[] = [];
+  private currentCameraIndex = 0;
+  private videoElement: HTMLVideoElement | null = null;
+
+  async initialize(videoElement: HTMLVideoElement) {
+    this.videoElement = videoElement;
+    await this.enumerateDevices();
+    await this.startCamera(0);
+  }
+
+  async enumerateDevices() {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      this.availableCameras = devices
+        .filter(device => device.kind === 'videoinput')
+        .map(device => ({
+          deviceId: device.deviceId,
+          label: device.label || `Camera ${device.deviceId.slice(0, 8)}`,
+          facingMode: this.guessFacingMode(device.label)
+        }));
+      
+      console.log('[CameraManager] Available cameras:', this.availableCameras);
+    } catch (error) {
+      console.error('[CameraManager] Error enumerating devices:', error);
+    }
+  }
+
+  private guessFacingMode(label: string): string {
+    const lowerLabel = label.toLowerCase();
+    if (lowerLabel.includes('front') || lowerLabel.includes('user')) return 'user';
+    if (lowerLabel.includes('back') || lowerLabel.includes('rear') || lowerLabel.includes('environment')) return 'environment';
+    return 'unknown';
+  }
+
+  async startCamera(cameraIndex: number) {
+    try {
+      // Stop current stream if exists
+      if (this.currentStream) {
+        this.currentStream.getTracks().forEach(track => track.stop());
+      }
+
+      const camera = this.availableCameras[cameraIndex];
+      if (!camera) {
+        console.error('[CameraManager] Camera not found at index:', cameraIndex);
+        return false;
+      }
+
+      console.log('[CameraManager] Starting camera:', camera.label, camera.deviceId);
+
+      const constraints: MediaStreamConstraints = {
+        video: {
+          deviceId: { exact: camera.deviceId },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: true
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      this.currentStream = stream;
+      this.currentCameraIndex = cameraIndex;
+
+      if (this.videoElement) {
+        this.videoElement.srcObject = stream;
+        await this.videoElement.play();
+        console.log('[CameraManager] Camera started successfully');
+      }
+
+      return true;
+    } catch (error) {
+      console.error('[CameraManager] Error starting camera:', error);
+      return false;
+    }
+  }
+
+  async flipCamera() {
+    if (this.availableCameras.length < 2) {
+      console.log('[CameraManager] Only one camera available, cannot flip');
+      return false;
+    }
+
+    const nextIndex = (this.currentCameraIndex + 1) % this.availableCameras.length;
+    console.log('[CameraManager] Flipping from camera', this.currentCameraIndex, 'to', nextIndex);
+    
+    return await this.startCamera(nextIndex);
+  }
+
+  getCurrentCamera(): CameraDevice | null {
+    return this.availableCameras[this.currentCameraIndex] || null;
+  }
+
+  getCurrentStream(): MediaStream | null {
+    return this.currentStream;
+  }
+
+  destroy() {
+    if (this.currentStream) {
+      this.currentStream.getTracks().forEach(track => track.stop());
+      this.currentStream = null;
+    }
+  }
+}
+
 const getOrCreateCallObject = () => {
   // Use a property on window to store the singleton
   if (!window._dailyCallObject) {
@@ -61,113 +173,71 @@ const getOrCreateCallObject = () => {
 
 const MeetingRoom = () => {
   const callRef = useRef<any>(null);
+  const cameraManagerRef = useRef<CameraManager | null>(null);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
   const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipants>({});
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isCallActive, setIsCallActive] = useState(true);
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [auditScore, setAuditScore] = useState(100);
   const [coachingMessages, setCoachingMessages] = useState<CoachingMessage[]>([]);
-  const [currentFacingMode, setCurrentFacingMode] = useState<'user' | 'environment'>('user');
+  const [currentCamera, setCurrentCamera] = useState<CameraDevice | null>(null);
+  const [isFlipping, setIsFlipping] = useState(false);
   const router = useRouter();
+
+  // Initialize camera manager
+  useEffect(() => {
+    const initializeCamera = async () => {
+      if (localVideoRef.current && !cameraManagerRef.current) {
+        cameraManagerRef.current = new CameraManager();
+        await cameraManagerRef.current.initialize(localVideoRef.current);
+        setCurrentCamera(cameraManagerRef.current.getCurrentCamera());
+      }
+    };
+
+    initializeCamera();
+
+    return () => {
+      if (cameraManagerRef.current) {
+        cameraManagerRef.current.destroy();
+        cameraManagerRef.current = null;
+      }
+    };
+  }, []);
 
   // Enhanced camera flip function
   const flipCamera = async () => {
+    if (!cameraManagerRef.current || isFlipping) return;
+
+    setIsFlipping(true);
     try {
-      const call = callRef.current;
-      if (!call) {
-        console.log('[VideoChat] No call object available for camera flip');
-        return;
-      }
-
-      console.log('[VideoChat] Starting camera flip from:', currentFacingMode);
-      
-
-      // Determine new facing mode
-      const newFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-      console.log('[VideoChat] Switching to camera:', newFacingMode);
-      
-      try {
-        // Request new stream with opposite facing mode
-        const newStream = await navigator.mediaDevices.getUserMedia({
-          video: { 
-            facingMode: newFacingMode,
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
-          audio: true
-        });
+      const success = await cameraManagerRef.current.flipCamera();
+      if (success) {
+        const newCamera = cameraManagerRef.current.getCurrentCamera();
+        setCurrentCamera(newCamera);
         
-        console.log('[VideoChat] New stream acquired:', newStream.id);
-        
-        // Stop old stream tracks AFTER we have the new stream
-        if (localStream) {
-          localStream.getTracks().forEach(track => {
-            console.log('[VideoChat] Stopping old track:', track.kind, track.label);
-            track.stop();
-          });
-        }
-        
-        // Update state with new stream and facing mode
-        setLocalStream(newStream);
-        setCurrentFacingMode(newFacingMode);
-        
-        // Get the video track from the new stream
-        const videoTrack = newStream.getVideoTracks()[0];
-        if (videoTrack) {
-          console.log('[VideoChat] Updating Daily.co with new video track:', videoTrack.label);
-          
-          // Update Daily.co's video input to use the new camera
-          await call.updateInputSettings({
-            video: {
-              deviceId: videoTrack.getSettings().deviceId
+        // Update Daily.co with the new stream
+        const call = callRef.current;
+        if (call) {
+          const newStream = cameraManagerRef.current.getCurrentStream();
+          if (newStream) {
+            const videoTrack = newStream.getVideoTracks()[0];
+            if (videoTrack) {
+              await call.updateInputSettings({
+                video: {
+                  deviceId: videoTrack.getSettings().deviceId
+                }
+              });
+              console.log('[VideoChat] Updated Daily.co with new camera');
             }
-          });
-          
-          // Ensure video is enabled
-          await call.setLocalVideo(true);
-        }
-        
-        console.log('[VideoChat] Camera flip completed successfully to:', newFacingMode);
-        
-      } catch (cameraError) {
-        console.error('[VideoChat] Error accessing new camera:', cameraError);
-        
-        // Fallback: try to get any available camera
-        try {
-          console.log('[VideoChat] Attempting fallback camera access');
-          const fallbackStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true
-          });
-          
-          // Stop old stream tracks before setting fallback
-          if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
           }
-          
-          const videoTrack = fallbackStream.getVideoTracks()[0];
-          if (videoTrack) {
-            await call.updateInputSettings({
-              video: {
-                deviceId: videoTrack.getSettings().deviceId
-              }
-            });
-          }
-          
-          setLocalStream(fallbackStream);
-          await call.setLocalVideo(true);
-          console.log('[VideoChat] Fallback camera access successful');
-          
-        } catch (fallbackError) {
-          console.error('[VideoChat] Fallback camera access failed:', fallbackError);
-          // Re-enable video even if we couldn't switch cameras
-          await call.setLocalVideo(true);
         }
       }
     } catch (error) {
-      console.error('[VideoChat] Error in flipCamera function:', error);
+      console.error('[VideoChat] Error flipping camera:', error);
+    } finally {
+      setIsFlipping(false);
     }
   };
 
@@ -227,8 +297,8 @@ const MeetingRoom = () => {
         }
         
         console.log('[VideoChat] Real-time coaching:', coachingMessage);
-                }
-              } catch (error) {
+      }
+    } catch (error) {
       console.error('[VideoChat] Error handling perception event:', error);
     }
   };
@@ -255,21 +325,6 @@ const MeetingRoom = () => {
 
       // Join meeting
       call.join({ url: conversation_url});
-
-      // Get local stream for PiP view
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: currentFacingMode,
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          }, 
-          audio: true 
-        });
-        setLocalStream(stream);
-      } catch (error) {
-        console.error('Error getting local stream:', error);
-      }
 
       // Handle remote participants
       const updateRemoteParticipants = () => {
@@ -324,20 +379,6 @@ const MeetingRoom = () => {
     });
   }, [remoteParticipants]);
 
-  // Update local video when stream changes
-  useEffect(() => {
-    const localVideoEl = document.getElementById('local-video') as HTMLVideoElement;
-    if (localVideoEl && localStream) {
-      console.log('[VideoChat] Updating local video element with new stream:', localStream.id);
-      localVideoEl.srcObject = localStream;
-      
-      // Ensure the video plays
-      localVideoEl.play().catch(error => {
-        console.error('[VideoChat] Error playing local video:', error);
-      });
-    }
-  }, [localStream]);
-
   // Get current score on mount
   useEffect(() => {
     setAuditScore(getCurrentScore());
@@ -366,9 +407,9 @@ const MeetingRoom = () => {
         // End the call on Daily
         call.leave();
         
-        // Stop local stream
-        if (localStream) {
-          localStream.getTracks().forEach(track => track.stop());
+        // Stop camera manager
+        if (cameraManagerRef.current) {
+          cameraManagerRef.current.destroy();
         }
 
         // End the conversation on Tavus dashboard
@@ -397,7 +438,7 @@ const MeetingRoom = () => {
   };
 
   if (!isCallActive) {
-  return (
+    return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="w-24 h-24 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -413,6 +454,11 @@ const MeetingRoom = () => {
   // Get the first remote participant for main view
   const remoteParticipantEntries = Object.entries(remoteParticipants);
   const mainParticipant = remoteParticipantEntries[0];
+
+  // Determine if current camera is front-facing for mirroring
+  const isFrontCamera = currentCamera?.facingMode === 'user' || 
+                       currentCamera?.label.toLowerCase().includes('front') ||
+                       currentCamera?.label.toLowerCase().includes('user');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 relative overflow-hidden">
@@ -451,35 +497,39 @@ const MeetingRoom = () => {
                 <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
             </div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
 
       {/* Picture-in-Picture local video */}
-      <div className="absolute top-6 right-6 w-20 h-28 bg-gray-800 rounded-xl overflow-hidden shadow-xl border-2 border-white/20">
+      <div className="absolute top-6 right-6 w-24 h-32 bg-gray-800 rounded-xl overflow-hidden shadow-xl border-2 border-white/20">
         {!isVideoOff ? (
           <div className="relative w-full h-full">
             <video
-              id="local-video"
+              ref={localVideoRef}
               autoPlay
               playsInline
               muted
-              className={`w-full h-full object-cover ${currentFacingMode === 'user' ? 'transform scale-x-[-1]' : ''}`}
+              className={`w-full h-full object-cover ${isFrontCamera ? 'transform scale-x-[-1]' : ''}`}
             />
             
             {/* Camera flip button */}
             <button 
               onClick={flipCamera}
-              className="absolute bottom-1 left-1 w-6 h-6 bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/90 transition-all duration-200 group hover:scale-110"
+              disabled={isFlipping}
+              className={`absolute bottom-1 left-1 w-6 h-6 bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/90 transition-all duration-200 group hover:scale-110 ${isFlipping ? 'opacity-50' : ''}`}
               title="Flip camera"
             >
-              <RotateCcw className="w-3 h-3 text-white group-hover:rotate-180 transition-transform duration-500" />
+              <RotateCcw className={`w-3 h-3 text-white transition-transform duration-500 ${isFlipping ? 'animate-spin' : 'group-hover:rotate-180'}`} />
             </button>
             
             {/* Camera mode indicator */}
             <div className="absolute top-1 left-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5">
               <span className="text-white text-xs font-medium">
-                {currentFacingMode === 'user' ? 'Front' : 'Rear'}
+                {currentCamera?.facingMode === 'user' ? 'Front' : 
+                 currentCamera?.facingMode === 'environment' ? 'Rear' : 
+                 currentCamera?.label.includes('front') ? 'Front' :
+                 currentCamera?.label.includes('back') ? 'Rear' : 'Cam'}
               </span>
             </div>
           </div>
