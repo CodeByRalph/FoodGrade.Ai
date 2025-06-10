@@ -164,8 +164,21 @@ class CameraManager {
 
       // Update PiP video element
       if (this.videoElement) {
-        this.videoElement.srcObject = stream;
-        await this.videoElement.play();
+        try {
+          this.videoElement.srcObject = stream;
+          // Wait for the video to be ready before playing
+          await new Promise((resolve, reject) => {
+            this.videoElement!.onloadedmetadata = () => resolve(void 0);
+            this.videoElement!.onerror = reject;
+            // Timeout after 5 seconds
+            setTimeout(() => reject(new Error('Video load timeout')), 5000);
+          });
+          await this.videoElement.play();
+          console.log('[CameraManager] Video element updated successfully');
+        } catch (videoError) {
+          console.error('[CameraManager] Error updating video element:', videoError);
+          // Continue anyway, the stream might still work for Daily.co
+        }
       }
 
       // CRITICAL: Update Daily.co with new camera stream for Tavus AI
@@ -489,12 +502,6 @@ const MeetingRoom = () => {
         url: conversation_url,
         startVideoOff: false,
         startAudioOff: false,
-        // Ensure video quality for AI analysis
-        videoSource: {
-          width: 1280,
-          height: 720,
-          frameRate: 30
-        }
       });
 
       // Cleanup
@@ -655,6 +662,9 @@ const MeetingRoom = () => {
               autoPlay
               playsInline
               muted
+              onError={(e) => console.error('[VideoChat] Video element error:', e)}
+              onLoadStart={() => console.log('[VideoChat] Video load started')}
+              onLoadedData={() => console.log('[VideoChat] Video data loaded')}
               className={`w-full h-full object-cover ${isFrontCamera ? 'transform scale-x-[-1]' : ''}`}
             />
             
