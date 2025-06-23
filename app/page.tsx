@@ -140,6 +140,24 @@ export default function LandingPage() {
       <div className={`min-h-screen bg-[#F7FAFC] ${manrope.className}`}>
         <Navigation />
 
+      <a
+  href="https://bolt.new"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="fixed top-4 right-4 z-40 hover:scale-105 transition-transform duration-300"
+  aria-label="Bolt.new Hackathon Badge"
+>
+  <Image
+    src="/black_circle_360x360.png" // or "/bolt-badge.png" if renamed and placed in /public
+    alt="Powered by Bolt.new"
+    width={48}
+    height={48}
+    className="rounded-full drop-shadow-md hover:drop-shadow-xl"
+    priority
+  />
+</a>
+
+
       {/* Hero Section - Enhanced with Animations */}
       <section className="relative overflow-hidden bg-gradient-to-br from-[#F7FAFC] via-white to-[#F7FAFC] min-h-screen">
         {/* Dynamic Animated Background System */}
