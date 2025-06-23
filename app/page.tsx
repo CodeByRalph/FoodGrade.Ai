@@ -150,8 +150,8 @@ export default function LandingPage() {
   <Image
     src="/black_circle_360x360.png" // or "/bolt-badge.png" if renamed and placed in /public
     alt="Powered by Bolt.new"
-    width={48}
-    height={48}
+    width={65}
+    height={65}
     className="rounded-full drop-shadow-md hover:drop-shadow-xl"
     priority
   />
